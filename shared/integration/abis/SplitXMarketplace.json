@@ -1,0 +1,37 @@
+[
+  {
+    "type": "function",
+    "name": "list",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256" },
+      { "name": "price", "type": "uint256" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "buy",
+    "stateMutability": "payable",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "cancel",
+    "stateMutability": "nonpayable",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "getListing",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": [
+      { "name": "seller", "type": "address" },
+      { "name": "price", "type": "uint256" },
+      { "name": "active", "type": "bool" }
+    ]
+  }
+]

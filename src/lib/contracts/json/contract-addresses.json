@@ -1,0 +1,11 @@
+{
+  "network": "Arbitrum Sepolia",
+  "chainId": 421614,
+  "payment": "ETH",
+  "contracts": {
+    "SplitXEntitlement": "0x0000000000000000000000000000000000000000",
+    "SplitXMarketplace": "0x0000000000000000000000000000000000000000",
+    "MockProviderAdapter": "0x0000000000000000000000000000000000000000"
+  },
+  "notes": "Backend engineer: replace zero addresses after deploy. Frontend reads this file as the single source of truth — do not hardcode addresses elsewhere."
+}

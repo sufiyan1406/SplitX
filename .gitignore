@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.node_modules.lock
+
+# Prompts, AI agent instructions & specifications
+PROMPTS/
+*prompt*
+*PROMPT*
+AGENTS.md
+
+# Grok & Cloud builder internals
+.grok/
+.project_id
+startup.sh
+artifacts/
+attachments/
+screenshots/
+.vercel/
+
+# Production builds
+dist/
+dist-ssr/
+.output/
+.vinxi/
+.nitro/
+*.local
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Editor and OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

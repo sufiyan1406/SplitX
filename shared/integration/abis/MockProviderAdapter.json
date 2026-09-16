@@ -1,0 +1,20 @@
+[
+  {
+    "type": "function",
+    "name": "provision",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256" },
+      { "name": "owner", "type": "address" },
+      { "name": "duration", "type": "uint256" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "revoke",
+    "stateMutability": "nonpayable",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": []
+  }
+]
