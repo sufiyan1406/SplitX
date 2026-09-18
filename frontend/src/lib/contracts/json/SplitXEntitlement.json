@@ -1,0 +1,74 @@
+[
+  {
+    "type": "function",
+    "name": "splitEntitlement",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256" },
+      { "name": "duration", "type": "uint256" }
+    ],
+    "outputs": [{ "name": "newTokenId", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "mintPrimary",
+    "stateMutability": "payable",
+    "inputs": [
+      { "name": "serviceId", "type": "bytes32" },
+      { "name": "duration", "type": "uint256" }
+    ],
+    "outputs": [{ "name": "tokenId", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "ownerOf",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": [{ "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "remainingDuration",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "isLocked",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "approve",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "to", "type": "address" },
+      { "name": "tokenId", "type": "uint256" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "setApprovalForAll",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "operator", "type": "address" },
+      { "name": "approved", "type": "bool" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "transferFrom",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "from", "type": "address" },
+      { "name": "to", "type": "address" },
+      { "name": "tokenId", "type": "uint256" }
+    ],
+    "outputs": []
+  }
+]
