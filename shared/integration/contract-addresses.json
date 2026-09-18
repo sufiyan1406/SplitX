@@ -1,8 +1,8 @@
 {
-  "chainId": 31337,
-  "chainName": "Local Hardhat Network",
-  "deploymentTimestamp": "2026-09-15T07:14:02.862Z",
-  "SplitXEntitlement": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-  "SplitXMarketplace": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-  "MockProviderAdapter": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  "chainId": 421614,
+  "chainName": "Arbitrum Sepolia",
+  "deploymentTimestamp": "2026-09-18T12:50:05.847Z",
+  "SplitXEntitlement": "0x04580E3B68a16C990aDE4723634c8456de02533d",
+  "SplitXMarketplace": "0x7d28c157ACB43C8D7423De156BE3Bef9e793f50A",
+  "MockProviderAdapter": "0x563aAF7D33DE340142e53B89594db2fB71252A8d"
 }

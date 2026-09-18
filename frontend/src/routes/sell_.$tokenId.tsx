@@ -57,17 +57,17 @@ function SellFlow() {
   function lockAndList() {
     if (!asset || !service) return;
     tx.start({
-      title: needsSplit ? "Split, approve & list" : "Approve & list",
-      kindLabel: "Lock & List",
+      title: needsSplit ? "Split & publish listing" : "Publish listing on marketplace",
+      kindLabel: "Seller Listing · Free to List",
       fields: [
-        { label: "Selling", value: unitLabel(asset.unit, duration) },
-        { label: "Remaining after", value: unitLabel(asset.unit, remainingAfter) },
-        { label: "List price", value: formatEthDisplay(listPrice) },
-        { label: "Platform fee", value: `${formatEthDisplay(proceeds.platform)} (5%)` },
-        { label: "Provider share", value: `${formatEthDisplay(proceeds.provider)} (5%)` },
-        { label: "You receive", value: `${formatEthDisplay(proceeds.seller)} (90%)` },
+        { label: "Listing Fee", value: "0.0000 ETH (Free)" },
+        { label: "Duration to sell", value: unitLabel(asset.unit, duration) },
+        { label: "Remaining in your assets", value: unitLabel(asset.unit, remainingAfter) },
+        { label: "Asking price for buyers", value: formatEthDisplay(listPrice) },
+        { label: "Payout to you when sold", value: `${formatEthDisplay(proceeds.seller)} (90%)` },
       ],
-      warning: "Once listed, this entitlement is locked and can no longer be used by you.",
+      warning:
+        "No money is deducted from your wallet to list. Listing is 100% free. Once listed, this time is locked on the marketplace until purchased or cancelled.",
       run: async (reportStage) => {
         let listId = asset.tokenId;
         if (needsSplit) {
@@ -106,6 +106,17 @@ function SellFlow() {
         )}
         {mine && !blocked && (
           <div className="mt-8 space-y-8">
+            <div className="border border-line/80 bg-surface/40 p-4">
+              <div className="flex items-center gap-2 text-xs font-mono text-ok">
+                <span className="size-2 rounded-full bg-ok" />
+                <span>Zero Listing Fee · Free to list</span>
+              </div>
+              <p className="mt-1 text-xs text-muted">
+                Listing does not deduct any money from your wallet. You set the price and receive 90%
+                payout when a buyer purchases your unused days.
+              </p>
+            </div>
+
             <div>
               <p className="meta">How much do you want to sell?</p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -132,7 +143,7 @@ function SellFlow() {
 
             <div>
               <label className="meta" htmlFor="price">
-                Listing price (ETH)
+                Listing price for buyers (ETH)
               </label>
               <input
                 id="price"
@@ -146,16 +157,17 @@ function SellFlow() {
             </div>
 
             <dl className="space-y-3">
+              <Line k="Listing Fee" v="0.0000 ETH (Free to list)" />
               <Line k="You are selling" v={unitLabel(asset.unit, duration)} />
-              <Line k="Remaining after sale" v={unitLabel(asset.unit, remainingAfter)} />
-              <Line k="Expected listing price" v={formatEthDisplay(listPrice)} />
-              <Line k="Platform fee" v="5%" />
-              <Line k="Provider share" v="5%" />
-              <Line k="Seller receives" v="90%" />
+              <Line k="Remaining in your assets" v={unitLabel(asset.unit, remainingAfter)} />
+              <Line k="Asking price for buyers" v={formatEthDisplay(listPrice)} />
+              <Line k="Your payout when sold" v={`${formatEthDisplay(proceeds.seller)} (90%)`} />
+              <Line k="Platform & provider cut" v="10% (deducted from buyer upon purchase)" />
             </dl>
 
             <p className="text-sm text-warn">
-              Once listed, this entitlement is locked and can no longer be used by you.
+              No money is deducted now. Once listed, this entitlement is locked on the marketplace until
+              purchased or cancelled.
             </p>
 
             <Magnetic>

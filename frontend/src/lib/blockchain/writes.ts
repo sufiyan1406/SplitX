@@ -3,6 +3,19 @@ import { publicClient, getInjectedWalletClient } from "./client";
 import { CONTRACT_ADDRESSES, entitlementAbi, marketplaceAbi } from "./contracts";
 import { getOnChainListing, getOnChainServicePrice, toContractServiceId } from "./reads";
 
+/**
+ * Fetch current gas price with a 50% buffer to avoid
+ * "max fee per gas less than block base fee" rejections on Arbitrum Sepolia.
+ */
+async function getGasOverrides() {
+  const gasPrice = await publicClient.getGasPrice();
+  const buffered = (gasPrice * 150n) / 100n;
+  return {
+    maxFeePerGas: buffered,
+    maxPriorityFeePerGas: buffered / 10n,
+  };
+}
+
 export async function purchaseServiceOnChain(
   accountAddress: string,
   serviceId: string,
@@ -11,6 +24,7 @@ export async function purchaseServiceOnChain(
   const walletClient = getInjectedWalletClient(accountAddress);
   const contractSvcId = toContractServiceId(serviceId);
   const priceWei = await getOnChainServicePrice(serviceId, durationDays);
+  const gas = await getGasOverrides();
 
   const hash = await walletClient.writeContract({
     address: CONTRACT_ADDRESSES.SplitXEntitlement,
@@ -19,6 +33,7 @@ export async function purchaseServiceOnChain(
     args: [contractSvcId, BigInt(durationDays)],
     value: priceWei,
     account: accountAddress as `0x${string}`,
+    ...gas,
   });
 
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
@@ -57,12 +72,15 @@ export async function splitEntitlementOnChain(
 ): Promise<{ hash: `0x${string}`; newTokenId: number }> {
   const walletClient = getInjectedWalletClient(accountAddress);
 
+  const gas = await getGasOverrides();
+
   const hash = await walletClient.writeContract({
     address: CONTRACT_ADDRESSES.SplitXEntitlement,
     abi: entitlementAbi,
     functionName: "splitEntitlement",
     args: [BigInt(tokenId), BigInt(splitDurationDays)],
     account: accountAddress as `0x${string}`,
+    ...gas,
   });
 
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
@@ -110,12 +128,14 @@ export async function approveMarketplaceOnChain(
   }
 
   const walletClient = getInjectedWalletClient(accountAddress);
+  const gas = await getGasOverrides();
   const hash = await walletClient.writeContract({
     address: CONTRACT_ADDRESSES.SplitXEntitlement,
     abi: entitlementAbi,
     functionName: "approve",
     args: [CONTRACT_ADDRESSES.SplitXMarketplace, BigInt(tokenId)],
     account: accountAddress as `0x${string}`,
+    ...gas,
   });
 
   await publicClient.waitForTransactionReceipt({ hash });
@@ -129,6 +149,7 @@ export async function listEntitlementOnChain(
 ): Promise<`0x${string}`> {
   const walletClient = getInjectedWalletClient(accountAddress);
   const priceWei = parseEther(priceEth);
+  const gas = await getGasOverrides();
 
   const hash = await walletClient.writeContract({
     address: CONTRACT_ADDRESSES.SplitXMarketplace,
@@ -136,6 +157,7 @@ export async function listEntitlementOnChain(
     functionName: "listEntitlement",
     args: [BigInt(tokenId), priceWei],
     account: accountAddress as `0x${string}`,
+    ...gas,
   });
 
   await publicClient.waitForTransactionReceipt({ hash });
@@ -147,6 +169,7 @@ export async function cancelListingOnChain(
   tokenId: number,
 ): Promise<`0x${string}`> {
   const walletClient = getInjectedWalletClient(accountAddress);
+  const gas = await getGasOverrides();
 
   const hash = await walletClient.writeContract({
     address: CONTRACT_ADDRESSES.SplitXMarketplace,
@@ -154,6 +177,7 @@ export async function cancelListingOnChain(
     functionName: "cancelListing",
     args: [BigInt(tokenId)],
     account: accountAddress as `0x${string}`,
+    ...gas,
   });
 
   await publicClient.waitForTransactionReceipt({ hash });
@@ -171,6 +195,7 @@ export async function buyEntitlementOnChain(
 
   const walletClient = getInjectedWalletClient(accountAddress);
   const priceWei = parseEther(listing.priceEth);
+  const gas = await getGasOverrides();
 
   const hash = await walletClient.writeContract({
     address: CONTRACT_ADDRESSES.SplitXMarketplace,
@@ -179,6 +204,7 @@ export async function buyEntitlementOnChain(
     args: [BigInt(tokenId)],
     value: priceWei,
     account: accountAddress as `0x${string}`,
+    ...gas,
   });
 
   await publicClient.waitForTransactionReceipt({ hash });

@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { ethers } = require("ethers");
@@ -111,6 +112,49 @@ app.get("/api/entitlements/:tokenId", async (req, res) => {
     });
   } catch (err) {
     res.status(404).json({ success: false, error: err.message });
+  }
+});
+
+app.get("/api/entitlements/owner/:address", async (req, res) => {
+  try {
+    if (!entitlementContract) {
+      return res.status(503).json({ error: "Entitlement contract not initialized" });
+    }
+    const targetOwner = req.params.address.toLowerCase();
+    const tokenIds = [];
+
+    // Scan token Transfer events to target address
+    try {
+      const filter = entitlementContract.filters.Transfer(null, targetOwner);
+      const events = await entitlementContract.queryFilter(filter, 0, "latest");
+      const seen = new Set();
+      for (const ev of events) {
+        const tid = Number(ev.args[2]);
+        if (!seen.has(tid)) {
+          seen.add(tid);
+          try {
+            const currentOwner = await entitlementContract.ownerOf(tid);
+            if (currentOwner.toLowerCase() === targetOwner) {
+              tokenIds.push({ tokenId: tid });
+            }
+          } catch (_) {}
+        }
+      }
+    } catch (_) {
+      // Fallback check recent IDs 1..50
+      for (let i = 1; i <= 50; i++) {
+        try {
+          const o = await entitlementContract.ownerOf(i);
+          if (o.toLowerCase() === targetOwner) tokenIds.push({ tokenId: i });
+        } catch (_) {
+          break; // Stop when non-existent tokens reached
+        }
+      }
+    }
+
+    res.json(tokenIds);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

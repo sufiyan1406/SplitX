@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 import {
   type CSSProperties,
-  type MouseEvent,
   type ReactNode,
   useEffect,
   useRef,
   useState,
 } from "react";
 
+/* ── Scroll‑triggered fade‑up reveal ──────────────────────────────────────── */
 export function Reveal({
   children,
   className,
@@ -25,9 +25,9 @@ export function Reveal({
     if (!el) return;
     const io = new IntersectionObserver(
       ([e]) => {
-        if (e?.isIntersecting) setOn(true);
+        if (e?.isIntersecting) { setOn(true); io.disconnect(); }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+      { threshold: 0.05, rootMargin: "0px 0px -4% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -44,6 +44,7 @@ export function Reveal({
   );
 }
 
+/* ── Magnetic — DISABLED (kept as passthrough so imports don't break) ────── */
 export function Magnetic({
   children,
   className,
@@ -51,33 +52,57 @@ export function Magnetic({
   children: ReactNode;
   className?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
+  return <div className={className}>{children}</div>;
+}
 
-  function move(e: MouseEvent) {
+/* ── Scroll‑triggered image clip‑path reveal ──────────────────────────────── */
+export function ImageReveal({
+  children,
+  className,
+  direction = "up",
+  delay = 0,
+}: {
+  children: ReactNode;
+  className?: string;
+  direction?: "up" | "left" | "right";
+  delay?: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [on, setOn] = useState(false);
+
+  useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const r = el.getBoundingClientRect();
-    const x = e.clientX - r.left - r.width / 2;
-    const y = e.clientY - r.top - r.height / 2;
-    el.style.transform = `translate(${x * 0.22}px, ${y * 0.22}px)`;
-  }
+    // Use threshold 0 so it fires as soon as any part enters viewport
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e?.isIntersecting) { setOn(true); io.disconnect(); }
+      },
+      { threshold: 0, rootMargin: "50px 0px 0px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
-  function leave() {
-    if (ref.current) ref.current.style.transform = "translate(0,0)";
-  }
+  const dirClass =
+    direction === "left"
+      ? "img-reveal-left"
+      : direction === "right"
+        ? "img-reveal-right"
+        : "img-reveal-up";
 
   return (
     <div
       ref={ref}
-      onMouseMove={move}
-      onMouseLeave={leave}
-      className={cn("will-change-transform transition-transform duration-200 ease-out", className)}
+      className={cn("img-reveal", dirClass, on && "img-reveal-on", className)}
+      style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
     </div>
   );
 }
 
+/* ── Per‑letter hero text animation ───────────────────────────────────────── */
 export function HeroWord({ text, className }: { text: string; className?: string }) {
   return (
     <span className={cn("font-display leading-none", className)} aria-label={text}>
@@ -94,6 +119,89 @@ export function HeroWord({ text, className }: { text: string; className?: string
   );
 }
 
+/* ── Animated counter (for "X live listings") ─────────────────────────────── */
+export function AnimatedCounter({ value, className }: { value: number; className?: string }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (value <= 0) { setDisplay(0); return; }
+    const duration = 1200;
+    const start = performance.now();
+    let raf: number;
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setDisplay(Math.round(ease * value));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+
+  return <span className={className}>{display}</span>;
+}
+
+/* ── TextReveal: Staggered word-by-word reveal on scroll / mount ───────────── */
+export function TextReveal({
+  text,
+  className,
+  as: Component = "h2",
+  delay = 0,
+  stagger = 40,
+}: {
+  text: string;
+  className?: string;
+  as?: "h1" | "h2" | "h3" | "h4" | "p" | "span" | "div";
+  delay?: number;
+  stagger?: number;
+}) {
+  const ref = useRef<HTMLElement>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -4% 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const words = text.split(" ");
+
+  return (
+    <Component ref={ref as any} className={cn("overflow-visible", className)}>
+      {words.map((word, i) => (
+        <span
+          key={`${word}-${i}`}
+          className="inline-block overflow-hidden align-top mr-[0.25em] last:mr-0"
+        >
+          <span
+            className="inline-block transition-all duration-700 ease-out will-change-transform"
+            style={{
+              transform: inView ? "translateY(0)" : "translateY(115%)",
+              opacity: inView ? 1 : 0,
+              filter: inView ? "blur(0px)" : "blur(4px)",
+              transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+              transitionDelay: `${delay + i * stagger}ms`,
+            }}
+          >
+            {word}
+          </span>
+        </span>
+      ))}
+    </Component>
+  );
+}
+
+/* ── Custom cursor ────────────────────────────────────────────────────────── */
 export function CustomCursor() {
   const dot = useRef<HTMLDivElement>(null);
   const ring = useRef<HTMLDivElement>(null);

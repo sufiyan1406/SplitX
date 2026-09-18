@@ -1,4 +1,5 @@
 import { Magnetic, Reveal } from "@/components/motion";
+import { showServiceTokenToast } from "@/components/toast/service-token-toast";
 import { useTx } from "@/components/tx/tx-context";
 import { NeedWallet } from "@/components/wallet/need-wallet";
 import {
@@ -66,6 +67,12 @@ function ServicePage() {
         return { hash: res.tx.hash, tokenId: res.tokenId };
       },
       onSuccess: (r) => {
+        showServiceTokenToast({
+          serviceId: service.id,
+          duration,
+          unit: service.unit,
+          tokenId: r.tokenId,
+        });
         if (r.tokenId) void nav({ to: "/assets/$tokenId", params: { tokenId: String(r.tokenId) } });
       },
     });

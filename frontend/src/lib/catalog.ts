@@ -12,14 +12,8 @@ export const PROVIDER_TREASURY = "0xADE00000000000000000000000000000000000DE";
 
 export const DEMO_WALLETS: WalletAccount[] = [
   {
-    address: "0xA11CE00000000000000000000000000000000001",
-    label: "Demo Wallet A",
-    kind: "demo",
-    balanceEth: "2.0000",
-  },
-  {
-    address: "0xB0B0000000000000000000000000000000000002",
-    label: "Demo Wallet B",
+    address: "0xa11ce00000000000000000000000000000000001",
+    label: "Demo Account",
     kind: "demo",
     balanceEth: "2.0000",
   },

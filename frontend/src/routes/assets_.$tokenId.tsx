@@ -1,4 +1,5 @@
 import { Reveal } from "@/components/motion";
+import { generateServiceToken } from "@/components/toast/service-token-toast";
 import { useTx } from "@/components/tx/tx-context";
 import { NeedWallet } from "@/components/wallet/need-wallet";
 import { useWallet } from "@/hooks/use-wallet";
@@ -8,6 +9,7 @@ import { CONTRACTS } from "@/lib/contracts/addresses";
 import { formatEthDisplay } from "@/lib/eth";
 import { arbiscanAddress, cn, daysFromMs, shortAddress } from "@/lib/utils";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 export const Route = createFileRoute("/assets_/$tokenId")({ component: AssetDetail });
 
@@ -17,6 +19,7 @@ function AssetDetail() {
   const snap = useLedger();
   const w = useWallet();
   const tx = useTx();
+  const [tokenCopied, setTokenCopied] = useState(false);
   const asset = snap.entitlements.find((e) => e.tokenId === id);
   const service = asset ? getService(asset.serviceId) : undefined;
   const listing = snap.listings.find((l) => l.tokenId === id && l.active);
@@ -42,16 +45,23 @@ function AssetDetail() {
   const usedPct = Math.min(100, (current.usedDuration / total) * 100);
   const expDays = daysFromMs(current.expiresAt - Date.now());
   const expLabel = expired || expDays <= 0 ? "Expired" : `Expires in ${expDays} days`;
+  const platformToken = generateServiceToken(service.id, asset.tokenId);
+
+  const handleCopyToken = () => {
+    void navigator.clipboard.writeText(platformToken);
+    setTokenCopied(true);
+    setTimeout(() => setTokenCopied(false), 2400);
+  };
 
   function cancel() {
     tx.start({
       title: "Cancel listing",
-      kindLabel: "Marketplace",
+      kindLabel: "Cancel Listing",
       fields: [
         { label: "Token", value: `#${current.tokenId}` },
         { label: "Service", value: svc.name },
       ],
-      warning: "Your entitlement will be returned to your SplitX wallet.",
+      warning: "Your listed entitlement will be unlocked and returned to your active inventory.",
       run: async (reportStage) => {
         const res = await ledger.cancelListing(current.tokenId, reportStage);
         return { hash: res.tx.hash, tokenId: current.tokenId };
@@ -106,6 +116,32 @@ function AssetDetail() {
             <p className="mt-2 text-sm text-muted">
               {unitLabel(asset.unit, asset.usedDuration)} used · {unitLabel(asset.unit, asset.remainingDuration)} remaining
             </p>
+          </div>
+
+          {/* Active Platform Token Box */}
+          <div className="mt-6 border border-line bg-surface/80 p-4">
+            <div className="flex items-center justify-between">
+              <span className="meta text-fg">Active Platform Access Token</span>
+              <span className="font-mono text-[10px] text-ok">Valid · Provisioned</span>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              This is your {service.name} credential token to use on the platform.
+            </p>
+            <div className="mt-3 flex items-center justify-between gap-2 border border-line/90 bg-bg-deep p-2.5">
+              <code className="font-mono text-xs font-semibold text-fg tracking-wide truncate selection:bg-hot">
+                {platformToken}
+              </code>
+              <button
+                type="button"
+                onClick={handleCopyToken}
+                className={cn(
+                  "pill px-2.5 py-1 text-[11px] font-mono shrink-0 transition-all",
+                  tokenCopied ? "bg-ok/20 border-ok text-ok" : "border-line hover:border-hot text-fg",
+                )}
+              >
+                {tokenCopied ? "Copied!" : "Copy Token"}
+              </button>
+            </div>
           </div>
 
           <NeedWallet>

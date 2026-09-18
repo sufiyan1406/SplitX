@@ -65,7 +65,7 @@ export function AliceBobDiagram() {
       <Reveal delay={120}>
         <article className="flex h-full flex-col overflow-hidden border border-line bg-surface">
           <div className="duotone h-44">
-            <img src="/images/hero.jpg" alt="" />
+            <img src="/images/svc-stream.jpg" alt="" />
           </div>
           <div className="flex flex-1 flex-col p-6">
             <p className="meta">Wallet B · Bob</p>

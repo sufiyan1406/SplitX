@@ -39,8 +39,10 @@ import type {
 } from "@/types/splitx";
 import { formatEther } from "viem";
 
-const STORAGE_KEY = "splitx-demo-ledger-v1";
+const STORAGE_KEY = "splitx-demo-ledger-v4";
 const DAY_MS = 86_400_000;
+
+const SELLER_DEMO_ADDRESS = DEMO_WALLETS[0].address;
 
 const seedWallets = (): Record<string, WalletAccount> => {
   const map: Record<string, WalletAccount> = {};
@@ -69,6 +71,44 @@ const seedWallets = (): Record<string, WalletAccount> => {
 function seed(): ChainSnapshot {
   const now = Date.now();
   const entitlements: Entitlement[] = [
+    // Pre-seeded active subscriptions owned by Seller (Lister A) ready to split & sell!
+    {
+      tokenId: 21,
+      serviceId: "netflix",
+      owner: SELLER_DEMO_ADDRESS,
+      originalDuration: 30,
+      usedDuration: 10,
+      remainingDuration: 20,
+      unit: "days",
+      status: "ACTIVE",
+      purchasedAt: now - 10 * DAY_MS,
+      expiresAt: now + 20 * DAY_MS,
+    },
+    {
+      tokenId: 22,
+      serviceId: "spotify",
+      owner: SELLER_DEMO_ADDRESS,
+      originalDuration: 30,
+      usedDuration: 16,
+      remainingDuration: 14,
+      unit: "days",
+      status: "ACTIVE",
+      purchasedAt: now - 16 * DAY_MS,
+      expiresAt: now + 14 * DAY_MS,
+    },
+    {
+      tokenId: 23,
+      serviceId: "ai-api",
+      owner: SELLER_DEMO_ADDRESS,
+      originalDuration: 1500,
+      usedDuration: 500,
+      remainingDuration: 1000,
+      unit: "credits",
+      status: "ACTIVE",
+      purchasedAt: now - 5 * DAY_MS,
+      expiresAt: now + 25 * DAY_MS,
+    },
+    // Existing marketplace listings from Protocol Seller
     {
       tokenId: 11,
       serviceId: "netflix",
@@ -127,27 +167,31 @@ function seed(): ChainSnapshot {
     },
   ];
 
-  const listings: Listing[] = entitlements.map((e) => ({
-    tokenId: e.tokenId,
-    serviceId: e.serviceId,
-    seller: e.owner,
-    priceEth: e.listingPriceEth ?? quoteResaleSuggest(getService(e.serviceId)!, e.remainingDuration),
-    duration: e.remainingDuration,
-    unit: e.unit,
-    active: true,
-    listedAt: e.listedAt ?? now,
-  }));
+  const listings: Listing[] = entitlements
+    .filter((e) => e.status === "LISTED")
+    .map((e) => ({
+      tokenId: e.tokenId,
+      serviceId: e.serviceId,
+      seller: e.owner,
+      priceEth: e.listingPriceEth ?? quoteResaleSuggest(getService(e.serviceId)!, e.remainingDuration),
+      duration: e.remainingDuration,
+      unit: e.unit,
+      active: true,
+      listedAt: e.listedAt ?? now,
+    }));
 
-  const provisions: ProvisionRecord[] = entitlements.map((e) => ({
-    id: `prov-${e.tokenId}`,
-    tokenId: e.tokenId,
-    serviceId: e.serviceId,
-    owner: e.owner,
-    duration: e.remainingDuration,
-    unit: e.unit,
-    at: e.listedAt ?? now,
-    action: "revoke",
-  }));
+  const provisions: ProvisionRecord[] = entitlements
+    .filter((e) => e.status === "LISTED")
+    .map((e) => ({
+      id: `prov-${e.tokenId}`,
+      tokenId: e.tokenId,
+      serviceId: e.serviceId,
+      owner: e.owner,
+      duration: e.remainingDuration,
+      unit: e.unit,
+      at: e.listedAt ?? now,
+      action: "revoke",
+    }));
 
   return {
     entitlements,
@@ -155,7 +199,7 @@ function seed(): ChainSnapshot {
     txs: [],
     provisions,
     wallets: seedWallets(),
-    nextTokenId: 17,
+    nextTokenId: 31,
     platformFeesEth: "0.42",
     providerRevenueEth: "0.62",
     volumeEth: "12.4",
@@ -166,6 +210,8 @@ const SERVER_SNAP = seed();
 let state: ChainSnapshot = SERVER_SNAP;
 let hydrated = false;
 let isRefreshingLive = false;
+let initialSyncPending = isLiveMode();
+let syncStatusObj = { isSyncing: false, initialPending: isLiveMode() };
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -208,12 +254,15 @@ function hydrate() {
 export async function refreshLiveState(userAddress?: string) {
   if (!isLiveMode() || isRefreshingLive) return;
   isRefreshingLive = true;
+  syncStatusObj = { isSyncing: true, initialPending: initialSyncPending };
+  emit();
   try {
     const { listings: onChainListings, entitlements: listingEntitlements } =
       await getOnChainActiveListings();
 
     let ownedEntitlements: Entitlement[] = [];
-    if (userAddress && /^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+    const isInjected = state.connected?.kind === "injected";
+    if (isInjected && userAddress && /^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
       ownedEntitlements = await fetchAllOwnedEntitlements(userAddress);
       const realBalance = await getRealEthBalance(userAddress);
       const key = walletKey(userAddress);
@@ -230,14 +279,25 @@ export async function refreshLiveState(userAddress?: string) {
     }
 
     const map = new Map<number, Entitlement>();
+    // Always preserve seed entitlements (e.g. Seller active subscriptions #21, #22, #23)
+    for (const e of seed().entitlements) map.set(e.tokenId, e);
+    // Preserve local demo entitlements
+    for (const e of state.entitlements) map.set(e.tokenId, e);
+    // Add on-chain listing entitlements and user owned entitlements
     for (const e of listingEntitlements) map.set(e.tokenId, e);
     for (const e of ownedEntitlements) map.set(e.tokenId, e);
+
+    const seedListings = seed().listings;
+    const activeListingsToUse = [
+      ...onChainListings,
+      ...seedListings.filter((sl) => !onChainListings.some((ol) => ol.tokenId === sl.tokenId)),
+    ];
 
     const mergedEntitlements = Array.from(map.values());
 
     state = {
       ...state,
-      listings: onChainListings,
+      listings: activeListingsToUse,
       entitlements: mergedEntitlements,
     };
     persist();
@@ -247,6 +307,9 @@ export async function refreshLiveState(userAddress?: string) {
     console.error("Failed to refresh live blockchain state:", err);
   } finally {
     isRefreshingLive = false;
+    initialSyncPending = false;
+    syncStatusObj = { isSyncing: false, initialPending: false };
+    emit();
   }
 }
 
@@ -413,7 +476,7 @@ export const ledger = {
     if (!service) throw new Error("Unknown service.");
     if (duration <= 0) throw new Error("Select a duration.");
 
-    if (isLiveMode()) {
+    if (isLiveMode() && c.kind === "injected") {
       reportStage?.("preparing");
       const priceWei = await getOnChainServicePrice(serviceId, duration);
       const priceEth = formatEther(priceWei);
@@ -499,7 +562,7 @@ export const ledger = {
   async splitEntitlement(tokenId: number, duration: number, reportStage?: TxStageReporter) {
     const c = requireConnected();
 
-    if (isLiveMode()) {
+    if (isLiveMode() && c.kind === "injected") {
       reportStage?.("preparing");
       reportStage?.("waiting");
 
@@ -579,7 +642,7 @@ export const ledger = {
     const price = Number(priceEth);
     if (!Number.isFinite(price) || price <= 0) throw new Error("Enter a valid listing price.");
 
-    if (isLiveMode()) {
+    if (isLiveMode() && c.kind === "injected") {
       reportStage?.("preparing");
       reportStage?.("waiting");
 
@@ -687,7 +750,7 @@ export const ledger = {
   async cancelListing(tokenId: number, reportStage?: TxStageReporter) {
     const c = requireConnected();
 
-    if (isLiveMode()) {
+    if (isLiveMode() && c.kind === "injected") {
       reportStage?.("preparing");
       reportStage?.("waiting");
 
@@ -747,36 +810,36 @@ export const ledger = {
   async buyListing(tokenId: number, reportStage?: TxStageReporter) {
     const c = requireConnected();
 
-    if (isLiveMode()) {
+    if (isLiveMode() && c.kind === "injected") {
       reportStage?.("preparing");
       const onChainListing = await getOnChainListing(tokenId);
-      if (!onChainListing || !onChainListing.active) {
-        throw new Error("This listing is no longer available on the blockchain.");
+      if (onChainListing && onChainListing.active) {
+        if (onChainListing.seller.toLowerCase() === c.address.toLowerCase()) {
+          throw new Error("You already own this entitlement.");
+        }
+
+        reportStage?.("waiting");
+        const hash = await buyEntitlementOnChain(c.address, tokenId);
+
+        reportStage?.("submitted", { hash });
+        reportStage?.("confirming", { hash });
+        reportStage?.("provisioning", { hash });
+
+        const tx = pushTx({
+          hash,
+          kind: "buy-listing",
+          from: c.address,
+          to: onChainListing.seller,
+          tokenId,
+          valueEth: onChainListing.priceEth,
+          label: `Buy listing #${tokenId}`,
+        });
+
+        await refreshLiveState(c.address);
+        reportStage?.("success", { hash });
+        return { tx, listing: onChainListing };
       }
-      if (onChainListing.seller.toLowerCase() === c.address.toLowerCase()) {
-        throw new Error("You already own this entitlement.");
-      }
-
-      reportStage?.("waiting");
-      const hash = await buyEntitlementOnChain(c.address, tokenId);
-
-      reportStage?.("submitted", { hash });
-      reportStage?.("confirming", { hash });
-      reportStage?.("provisioning", { hash });
-
-      const tx = pushTx({
-        hash,
-        kind: "buy-listing",
-        from: c.address,
-        to: onChainListing.seller,
-        tokenId,
-        valueEth: onChainListing.priceEth,
-        label: `Buy listing #${tokenId}`,
-      });
-
-      await refreshLiveState(c.address);
-      reportStage?.("success", { hash });
-      return { tx, listing: onChainListing };
+      // If not active on-chain, fall through to demo handling for seed protocol listings
     }
 
     // DEMO mode fallback
@@ -870,6 +933,16 @@ export const ledger = {
 
 export function useLedger() {
   return useSyncExternalStore(ledger.subscribe, ledger.get, () => SERVER_SNAP);
+}
+
+const SERVER_SYNC_STATUS = { isSyncing: false, initialPending: false };
+
+export function useLiveSyncStatus() {
+  return useSyncExternalStore(
+    ledger.subscribe,
+    () => syncStatusObj,
+    () => SERVER_SYNC_STATUS
+  );
 }
 
 export function humanError(err: unknown) {

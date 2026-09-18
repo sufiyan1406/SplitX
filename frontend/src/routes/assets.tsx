@@ -14,6 +14,7 @@ export const Route = createFileRoute("/assets")({ component: AssetsPage });
 function AssetsPage() {
   const snap = useLedger();
   const w = useWallet();
+
   const mine = snap.entitlements.filter(
     (e) => w.connected && e.owner.toLowerCase() === w.connected.address.toLowerCase(),
   );
@@ -34,14 +35,11 @@ function AssetsPage() {
             <div className="border border-line bg-surface p-8">
               <h2 className="font-display text-4xl">No entitlements yet</h2>
               <p className="mt-3 text-sm text-muted">
-                Buy a shorter window, or pick up unused time on the marketplace.
+                Buy a subscription or pick up discounted unused time on the marketplace to get started.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
-                <Link to="/buy" className="pill pill-solid">
-                  Buy access
-                </Link>
-                <Link to="/marketplace" className="pill">
-                  Marketplace
+                <Link to="/marketplace" className="pill pill-solid">
+                  Browse marketplace
                 </Link>
               </div>
             </div>

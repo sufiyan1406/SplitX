@@ -12,8 +12,8 @@ export function NeedWallet({ children, title }: { children: ReactNode; title?: s
         <p className="meta">Wallet required</p>
         <h2 className="font-display mt-2 text-4xl">{title ?? "Connect to continue"}</h2>
         <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">
-          Connect MetaMask on Arbitrum Sepolia, or use Demo Wallet A / B to run the full buy → use →
-          sell → resale loop.
+          Connect MetaMask on Arbitrum Sepolia, or use the Demo Wallet to explore the full buy → list →
+           resale loop.
         </p>
         <div className="mt-6">
           <WalletMenu />

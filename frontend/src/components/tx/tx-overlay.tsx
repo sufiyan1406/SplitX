@@ -72,15 +72,32 @@ export function TxOverlay() {
           <ol className="mt-6 space-y-3">
             {STEPS.map((s) => {
               const st = stepState(tx.status, s.key);
+              const titleAndKind = `${tx.request?.title ?? ""} ${tx.request?.kindLabel ?? ""}`.toLowerCase();
+              const isCancel = titleAndKind.includes("cancel");
+              const isListing = !isCancel && titleAndKind.includes("list");
+              const successLabel = isCancel
+                ? "Listing cancelled. Entitlement has been returned to your inventory."
+                : isListing
+                  ? "Listing published! Unused time is now live on marketplace."
+                  : "Purchase confirmed! Entitlement access is now yours.";
+
               const label =
                 s.key === "provisioning"
                   ? tx.status === "provisioning"
-                    ? "Transferring entitlement to provider..."
+                    ? isCancel
+                      ? "Unlocking entitlement in contract..."
+                      : isListing
+                        ? "Locking entitlement for marketplace..."
+                        : "Transferring entitlement to provider..."
                     : tx.status === "success"
-                      ? "Provider entitlement updated"
+                      ? isCancel
+                        ? "Entitlement unlocked"
+                        : isListing
+                          ? "Marketplace listing active"
+                          : "Provider entitlement updated"
                       : s.label
                   : s.key === "success" && tx.status === "success"
-                    ? "Entitlement is now yours."
+                    ? successLabel
                     : s.label;
               return (
                 <li key={s.key} className="tx-step">

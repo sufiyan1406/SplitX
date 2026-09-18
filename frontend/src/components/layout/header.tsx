@@ -1,3 +1,4 @@
+import { ModeSwitcher } from "@/components/layout/mode-switcher";
 import { RemainderClock } from "@/components/layout/remainder-clock";
 import { WalletMenu } from "@/components/wallet/wallet-menu";
 import { cn } from "@/lib/utils";
@@ -7,9 +8,8 @@ import { useState } from "react";
 
 const NAV = [
   { to: "/marketplace", label: "Marketplace" },
-  { to: "/buy", label: "Buy" },
   { to: "/assets", label: "Assets" },
-  { to: "/sell", label: "Sell" },
+  { to: "/sell", label: "Listing" },
   { to: "/how-it-works", label: "Protocol" },
 ] as const;
 
@@ -36,8 +36,8 @@ export function Header() {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "text-[0.78rem] tracking-wide transition-colors duration-200",
-                  on ? "text-fg" : "text-muted hover:text-fg",
+                  "nav-link text-[0.78rem] tracking-wide transition-colors duration-200",
+                  on ? "nav-link-active text-fg" : "text-muted hover:text-fg",
                 )}
               >
                 {item.label}
@@ -47,7 +47,8 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <RemainderClock className="hidden items-center sm:flex" />
+          <ModeSwitcher className="hidden sm:inline-flex" />
+          <RemainderClock className="hidden items-center xl:flex" />
           <Link to="/provider" className="meta hidden text-faint transition-colors hover:text-fg xl:inline">
             Provider
           </Link>
@@ -65,6 +66,10 @@ export function Header() {
 
       {open && (
         <div className="border-t border-line bg-bg px-5 py-4 lg:hidden">
+          <div className="mb-3 flex items-center justify-between border-b border-line/60 pb-3">
+            <span className="meta">Active Mode</span>
+            <ModeSwitcher />
+          </div>
           <div className="flex flex-col gap-1">
             {NAV.map((item) => (
               <Link

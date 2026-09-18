@@ -1,4 +1,4 @@
-import { CHAIN_NAME } from "@/lib/catalog";
+import { CHAIN_NAME, DEMO_WALLETS } from "@/lib/catalog";
 import { formatEthDisplay } from "@/lib/eth";
 import { useWallet } from "@/hooks/use-wallet";
 import { cn, shortAddress } from "@/lib/utils";
@@ -25,20 +25,10 @@ export function WalletMenu() {
 
   return (
     <div ref={wrap} className="relative flex items-center gap-2">
-      <span
-        className={cn(
-          "meta hidden items-center gap-2 rounded-xs border px-3 py-2 sm:inline-flex",
-          wrong ? "border-danger text-danger" : live ? "border-ok text-ok" : "border-warn text-warn",
-        )}
-      >
-        <span className={cn("size-1.5 rounded-full", wrong ? "bg-danger" : live ? "bg-ok" : "bg-warn")} aria-hidden />
-        {wrong ? "Wrong network" : live ? "LIVE · Arbitrum Sepolia" : "DEMO MODE"}
-      </span>
-
       <button type="button" className="pill pill-solid gap-2" onClick={() => setOpen((v) => !v)}>
         <Wallet className="size-3.5" />
         {w.connected
-          ? `${w.account?.kind === "demo" ? `${w.account.label.replace("Demo Wallet ", "")} · ` : ""}${shortAddress(w.connected.address)}`
+          ? shortAddress(w.connected.address)
           : "Connect"}
         <ChevronDown className="size-3.5" />
       </button>
@@ -60,21 +50,6 @@ export function WalletMenu() {
                 </button>
               )}
               <div className="hairline" />
-              <p className="meta">Switch account</p>
-              {w.demo.map((d) => (
-                <button
-                  key={d.address}
-                  type="button"
-                  className="pill w-full justify-between"
-                  onClick={() => {
-                    void w.connectDemo(d.address);
-                    setOpen(false);
-                  }}
-                >
-                  <span>{d.label}</span>
-                  <span className="font-mono normal-case tracking-normal">{formatEthDisplay(d.balanceEth)}</span>
-                </button>
-              ))}
               <button
                 type="button"
                 className="pill w-full"
@@ -100,24 +75,22 @@ export function WalletMenu() {
                 MetaMask
               </button>
               {w.error && <p className="text-xs text-danger">{w.error}</p>}
-              <p className="meta pt-2">Demo wallets</p>
+              <div className="hairline" />
+              <p className="meta pt-2">Demo wallet</p>
               <p className="text-xs leading-relaxed text-faint">
-                Use A as seller and B as buyer to run the full unused-time loop.
+                Use the demo wallet to explore the full buy → list → resale loop without MetaMask.
               </p>
-              {w.demo.map((d) => (
-                <button
-                  key={d.address}
-                  type="button"
-                  className="pill w-full justify-between"
-                  onClick={() => {
-                    void w.connectDemo(d.address);
-                    setOpen(false);
-                  }}
-                >
-                  <span>{d.label}</span>
-                  <span className="font-mono normal-case tracking-normal">{shortAddress(d.address)}</span>
-                </button>
-              ))}
+              <button
+                type="button"
+                className="pill w-full justify-between"
+                onClick={() => {
+                  void w.connectDemo(DEMO_WALLETS[0].address);
+                  setOpen(false);
+                }}
+              >
+                <span>{DEMO_WALLETS[0].label}</span>
+                <span className="font-mono normal-case tracking-normal">{shortAddress(DEMO_WALLETS[0].address)}</span>
+              </button>
             </div>
           )}
         </div>

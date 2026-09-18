@@ -13,22 +13,41 @@ export function toContractServiceId(id: string): string {
     case "ai-api":
       return "AI_API_CREDITS";
     case "nimbus":
+      return "NIMBUS";
+    case "forge":
+      return "FORGE";
+    case "lumen":
+      return "LUMEN";
     case "apex":
-      return "CLOUD_STORAGE";
+      return "APEX";
     default:
-      return id.toUpperCase();
+      return id;
   }
 }
 
 export function toFrontendServiceId(contractServiceId: string): string {
   switch (contractServiceId) {
     case "NETFLIX_PREMIUM":
+    case "netflix":
       return "netflix";
     case "SPOTIFY_PREMIUM":
+    case "spotify":
       return "spotify";
     case "AI_API_CREDITS":
+    case "ai-api":
       return "ai-api";
+    case "NIMBUS":
+    case "nimbus":
     case "CLOUD_STORAGE":
+      return "nimbus";
+    case "FORGE":
+    case "forge":
+      return "forge";
+    case "LUMEN":
+    case "lumen":
+      return "lumen";
+    case "APEX":
+    case "apex":
       return "apex";
     default:
       return contractServiceId.toLowerCase();

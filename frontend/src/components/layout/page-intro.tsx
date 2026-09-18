@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TextReveal } from "@/components/motion";
 
 export function PageIntro({
   kicker,
@@ -12,7 +13,7 @@ export function PageIntro({
   return (
     <header className="max-w-2xl">
       <p className="meta">{kicker}</p>
-      <h1 className="font-display mt-3 text-display leading-none">{title}</h1>
+      <TextReveal as="h1" text={title} className="font-display mt-3 text-display leading-none" />
       {children ? <div className="mt-5 max-w-xl text-base leading-relaxed text-muted md:text-lg">{children}</div> : null}
     </header>
   );
