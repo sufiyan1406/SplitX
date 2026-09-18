@@ -13,7 +13,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<"visible" | "exiting" | "entering">("visible");
   const [displayChildren, setDisplayChildren] = useState(children);
   const prevPathRef = useRef(pathname);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (pathname === prevPathRef.current) {

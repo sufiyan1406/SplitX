@@ -172,19 +172,10 @@
 @layer components {
   .font-display {
     font-family: var(--font-display);
+    letter-spacing: var(--tracking-display);
     font-weight: 700;
     font-style: normal;
     text-transform: uppercase;
-    font-feature-settings: "calt" 0, "liga" 0, "dlig" 0, "clig" 0;
-    font-variant-ligatures: none;
-  }
-
-  .font-display *,
-  h1,
-  h2,
-  h3 {
-    font-feature-settings: "calt" 0, "liga" 0, "dlig" 0, "clig" 0;
-    font-variant-ligatures: none;
   }
 
   .font-display em,

@@ -26,30 +26,30 @@ export function IntroReveal({ onStageChange, onSkip }: IntroRevealProps) {
 
   // Precise timeline progression (0ms start)
   useEffect(() => {
-    // Stage 2: Scramble SPLITX into KEEP (2200ms)
+    // Stage 2: Scramble SPLITX into KEEP (2100ms)
     const scrambleTimer = setTimeout(() => {
       setStage("scrambling");
-    }, 2200);
+    }, 2100);
 
-    // Stage 3: Center hold on KEEP (3100ms)
+    // Stage 3: Center hold on KEEP (2950ms)
     const holdTimer = setTimeout(() => {
       setStage("holding");
-    }, 3100);
+    }, 2950);
 
-    // Stage 4: Sliding KEEP from center to quote headline (3500ms)
+    // Stage 4: Sliding KEEP from center to quote headline (3350ms)
     const slideTimer = setTimeout(() => {
       setStage("sliding");
-    }, 3500);
+    }, 3350);
 
-    // Stage 5: Landing & headline cascade (4650ms)
+    // Stage 5: Landing & headline cascade (4500ms)
     const landTimer = setTimeout(() => {
       setStage("landing");
-    }, 4650);
+    }, 4500);
 
-    // Stage 6: Done, veil unmounts (5000ms)
+    // Stage 6: Done, veil unmounts (4900ms)
     const doneTimer = setTimeout(() => {
       setStage("done");
-    }, 5000);
+    }, 4900);
 
     return () => {
       clearTimeout(scrambleTimer);

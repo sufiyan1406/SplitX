@@ -23,12 +23,12 @@ const INITIAL_SPLITX = [
 ];
 
 const FLY_IN_DIRECTIONS = [
-  { transform: "translate3d(-100vw, 0, 0)" },     // S: Left
-  { transform: "translate3d(0, -100vh, 0)" },     // P: Top
-  { transform: "translate3d(-80vw, 80vh, 0)" },   // L: Bottom-Left
-  { transform: "translate3d(80vw, -80vh, 0)" },   // I: Top-Right
-  { transform: "translate3d(0, 100vh, 0)" },      // T: Bottom
-  { transform: "translate3d(100vw, 0, 0)" },      // X: Right (Red!)
+  { transform: "translate3d(-100vw, 0, 0)" },     // S: West (Left)
+  { transform: "translate3d(0, -100vh, 0)" },     // P: North (Top)
+  { transform: "translate3d(-80vw, 80vh, 0)" },   // L: South-West (Bottom-Left)
+  { transform: "translate3d(80vw, -80vh, 0)" },   // I: North-East (Top-Right)
+  { transform: "translate3d(0, 100vh, 0)" },      // T: South (Bottom)
+  { transform: "translate3d(100vw, 0, 0)" },      // X: East (Right - glowing Red!)
 ];
 
 function Home() {
@@ -72,15 +72,15 @@ function Home() {
     return () => window.removeEventListener("resize", updateOffset);
   }, [trailingRemoved]);
 
-  // Stage 1: Sequential letter-by-letter entrance of S -> P -> L -> I -> T -> X from separate directions
+  // Stage 1: Sequential letter-by-letter entrance of S -> P -> L -> I -> T -> X flying in from separate directions
   useEffect(() => {
     if (introStage !== "splitx") return;
     const t1 = setTimeout(() => setSplitxCount(1), 100);  // S from Left
-    const t2 = setTimeout(() => setSplitxCount(2), 340);  // P from Top
-    const t3 = setTimeout(() => setSplitxCount(3), 580);  // L from Bottom-Left
-    const t4 = setTimeout(() => setSplitxCount(4), 820);  // I from Top-Right
-    const t5 = setTimeout(() => setSplitxCount(5), 1060); // T from Bottom
-    const t6 = setTimeout(() => setSplitxCount(6), 1300); // X from Right (red!)
+    const t2 = setTimeout(() => setSplitxCount(2), 320);  // P from Top
+    const t3 = setTimeout(() => setSplitxCount(3), 540);  // L from Bottom-Left
+    const t4 = setTimeout(() => setSplitxCount(4), 760);  // I from Top-Right
+    const t5 = setTimeout(() => setSplitxCount(5), 980);  // T from Bottom
+    const t6 = setTimeout(() => setSplitxCount(6), 1200); // X from Right (Red!)
 
     return () => {
       clearTimeout(t1);
@@ -105,7 +105,7 @@ function Home() {
       setLetters((prev) => {
         return prev.map((item, idx) => {
           if (idx < 4) {
-            const lockTick = 6 + idx * 5; // locks: K at tick 6, E at 11, E at 16, P at 21
+            const lockTick = 6 + idx * 4; // locks: K at tick 6, E at 10, E at 14, P at 18
             if (tick >= lockTick) {
               return { char: target[idx], isRed: false };
             }
@@ -113,7 +113,7 @@ function Home() {
             return { char: randomChar, isRed: idx === 5 };
           } else {
             // Trailing letters (T, X)
-            if (tick >= 21) {
+            if (tick >= 18) {
               return item;
             }
             const randomChar = SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
@@ -123,11 +123,11 @@ function Home() {
       });
 
       // Remove trailing letters after index 3 is locked
-      if (tick >= 21) {
+      if (tick >= 18) {
         setTrailingRemoved(true);
       }
 
-      if (tick >= 25) {
+      if (tick >= 22) {
         clearInterval(interval);
         setLetters([
           { char: "K", isRed: false },
@@ -206,7 +206,8 @@ function Home() {
                       "KEEP"
                     ) : (
                       letters.slice(0, trailingRemoved ? 4 : 6).map((item, i) => {
-                        const hasArrived = introStage !== "splitx" || splitxCount > i;
+                        const isSplitxStage = introStage === "splitx";
+                        const hasArrived = !isSplitxStage || splitxCount > i;
                         return (
                           <span
                             key={i}
@@ -220,15 +221,16 @@ function Home() {
                               display: "inline-block",
                               verticalAlign: "baseline",
                               lineHeight: 1,
-                              transform: hasArrived
-                                ? "translate3d(0, 0, 0)"
-                                : FLY_IN_DIRECTIONS[i]?.transform || "translate3d(0, 0, 0)",
+                              transform: isSplitxStage
+                                ? hasArrived
+                                  ? "translate3d(0, 0, 0)"
+                                  : FLY_IN_DIRECTIONS[i]?.transform || "translate3d(0, 0, 0)"
+                                : "none",
                               opacity: hasArrived ? 1 : 0,
-                              filter: hasArrived ? "none" : "blur(12px)",
-                              transition:
-                                introStage === "splitx"
-                                  ? "transform 420ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease-out, filter 200ms ease-out"
-                                  : undefined,
+                              filter: isSplitxStage && !hasArrived ? "blur(12px)" : "none",
+                              transition: isSplitxStage
+                                ? "transform 460ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease-out, filter 220ms ease-out"
+                                : undefined,
                             }}
                           >
                             {item.char}
@@ -236,46 +238,46 @@ function Home() {
                         );
                       })
                     )}
-                  </span>
-                  <span className="inline-block overflow-visible align-baseline ml-3 sm:ml-4 md:ml-5">
+                  </span>{" "}
+                  <span className="inline-block overflow-visible align-baseline">
                     <span
                       className={cn(
-                        "inline-block align-baseline leading-none transition-all duration-700 ease-out",
+                        "inline-block transition-all duration-700 ease-out",
                         isRevealed
                           ? "opacity-100 translate-y-0 filter-none delay-150"
                           : "opacity-0 translate-y-6 filter blur-sm"
                       )}
                     >
-                      THE DAYS
+                      the days
                     </span>
                   </span>
                 </div>
 
-                {/* Line 2: YOU NEED. - Balanced spacing with mt-1 sm:mt-1.5 */}
+                {/* Line 2: you need. - Balanced spacing with mt-1 sm:mt-1.5 */}
                 <div className="overflow-visible mt-1 sm:mt-1.5">
                   <span
                     className={cn(
-                      "inline-block align-baseline leading-none transition-all duration-700 ease-out",
+                      "inline-block transition-all duration-700 ease-out",
                       isRevealed
                         ? "opacity-100 translate-y-0 filter-none delay-200"
                         : "opacity-0 translate-y-6 filter blur-sm"
                     )}
                   >
-                    YOU NEED.
+                    you need.
                   </span>
                 </div>
 
-                {/* Line 3: SELL THE REST. - Balanced spacing with mt-1 sm:mt-1.5 */}
+                {/* Line 3: Sell the rest. - Balanced spacing with mt-1 sm:mt-1.5 */}
                 <div className="overflow-visible mt-1 sm:mt-1.5">
                   <span
                     className={cn(
-                      "inline-block align-baseline leading-none text-hot drop-shadow-[0_0_35px_rgba(239,35,60,0.35)] transition-all duration-700 ease-out",
+                      "inline-block text-hot drop-shadow-[0_0_35px_rgba(239,35,60,0.35)] transition-all duration-700 ease-out",
                       isRevealed
                         ? "opacity-100 translate-y-0 filter-none delay-300"
                         : "opacity-0 translate-y-6 filter blur-sm"
                     )}
                   >
-                    SELL THE REST.
+                    Sell the rest.
                   </span>
                 </div>
               </h1>
