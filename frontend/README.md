@@ -1,56 +1,45 @@
-# SplitX ⚡
+# SplitX — Web Frontend ⚡
 
-> **Decentralized AI Compute & Model Entitlement Exchange**
+> **Time-Tokenized Subscription Exchange** · Arbitrum Sepolia
 
-SplitX enables granular, secondary-market trading of AI compute slots, API access entitlements, and model subscriptions. Buy, sell, split, and optimize resource access seamlessly.
+This folder houses the frontend client application for SplitX built with **React 19**, **TanStack Start / Router**, and **Vite**.
 
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+
-- npm or pnpm
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/vrutant08/SplitX.git
-   cd SplitX
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-
-4. **Run development server:**
-   ```bash
-   npm run dev
-   ```
-
-   The app will automatically open in your browser at `http://localhost:3000`.
+For the complete protocol architecture, smart contracts registry, and deployment documentation, refer to the [Root README.md](../README.md).
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 Quick Start
 
-- **Framework:** React 19 + TanStack Start / Router + Vite
-- **Styling:** Tailwind CSS + Radix UI + Custom Design System
-- **State Management:** Zustand
-- **Typography:** Chubbo + Satoshi
-- **Icons:** Lucide React
+```bash
+# Install dependencies
+npm install
+
+# Run development server with auto-open
+npm run dev
+
+# Build production bundle for Vercel
+npm run build
+```
 
 ---
 
-## 📦 Scripts
+## 🔑 Environment Variables
 
-- `npm run dev` — Starts dev server with auto-open on `http://localhost:3000`
-- `npm run build` — Builds production bundle
-- `npm run preview` — Previews production build locally
+Copy `.env.example` to `.env`:
+
+```bash
+# Authentication (set to false for mock/hackathon mode)
+VITE_AUTH_ENABLED=false
+
+# Optional: Remote backend API URL
+# VITE_API_URL=https://your-backend.onrender.com
+```
+
+---
+
+## 🛠️ Key Libraries
+
+- **Routing & SSR:** TanStack Start & TanStack Router
+- **Styling:** Tailwind CSS v4 + Radix UI Primitives + Custom CSS Glitch Engine
+- **Web3:** `viem` + Injected Wallet Connector
+- **Typography:** Syne + JetBrains Mono + Outfit

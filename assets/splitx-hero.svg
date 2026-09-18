@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 380" width="100%" height="100%" style="background:#0a0608;border-radius:12px;overflow:hidden;">
+  <defs>
+    <!-- Dark Tactical Background Gradient -->
+    <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16080b" />
+      <stop offset="50%" stop-color="#090506" />
+      <stop offset="100%" stop-color="#050304" />
+    </linearGradient>
+
+    <!-- Crimson Bloom -->
+    <radialGradient id="crimsonBloom" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#ef233c" stop-opacity="0.32" />
+      <stop offset="45%" stop-color="#ef233c" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#ef233c" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Crimson Line Gradient -->
+    <linearGradient id="crimsonLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ef233c" stop-opacity="0" />
+      <stop offset="25%" stop-color="#ef233c" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#ff4757" stop-opacity="1" />
+      <stop offset="75%" stop-color="#ef233c" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#ef233c" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Scanline Pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ef233c" stroke-opacity="0.05" stroke-width="1" />
+    </pattern>
+
+    <!-- Glitch Filter -->
+    <filter id="glitch" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04 0.95" numOctaves="1" result="noise">
+        <animate attributeName="baseFrequency" values="0.04 0.95;0.08 0.7;0.04 0.95" dur="4s" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&amp;family=Syne:wght@800&amp;display=swap');
+
+      .mono { font-family: 'JetBrains Mono', monospace; }
+      .syne { font-family: 'Syne', -apple-system, sans-serif; font-weight: 800; }
+
+      /* Scanning HUD beam */
+      @keyframes scan {
+        0% { transform: translateY(-380px); opacity: 0; }
+        15% { opacity: 1; }
+        85% { opacity: 1; }
+        100% { transform: translateY(380px); opacity: 0; }
+      }
+      .scanner {
+        animation: scan 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+
+      /* Live status pulse */
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.35; transform: scale(0.85); }
+      }
+      .pulse-dot {
+        animation: pulse 2s ease-in-out infinite;
+        transform-origin: 105px 44px;
+      }
+
+      /* Chromatic aberration jitter */
+      @keyframes rgbShiftCyan {
+        0%, 100% { transform: translate(0, 0); }
+        20% { transform: translate(-2px, 1px); }
+        40% { transform: translate(-1px, -1px); }
+        60% { transform: translate(-3px, 0px); }
+        80% { transform: translate(-1px, 2px); }
+      }
+      @keyframes rgbShiftRed {
+        0%, 100% { transform: translate(0, 0); }
+        20% { transform: translate(2px, -1px); }
+        40% { transform: translate(3px, 1px); }
+        60% { transform: translate(1px, -1px); }
+        80% { transform: translate(2px, 0px); }
+      }
+      .cyan-shift {
+        animation: rgbShiftCyan 3.5s steps(2, start) infinite;
+      }
+      .red-shift {
+        animation: rgbShiftRed 3.5s steps(2, start) infinite;
+      }
+
+      /* Typing cursor blink */
+      @keyframes blink {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+      }
+      .cursor {
+        animation: blink 0.9s infinite;
+      }
+
+      /* Subtitle glow shimmer */
+      @keyframes glowPulse {
+        0%, 100% { filter: drop-shadow(0 0 12px rgba(239,35,60,0.6)); }
+        50% { filter: drop-shadow(0 0 24px rgba(239,35,60,0.95)); }
+      }
+      .hero-glow {
+        animation: glowPulse 3s ease-in-out infinite;
+      }
+    </style>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1000" height="380" fill="url(#bgGlow)" />
+  <rect width="1000" height="380" fill="url(#grid)" />
+  <rect width="1000" height="380" fill="url(#crimsonBloom)" />
+
+  <!-- Scanning laser line -->
+  <g class="scanner">
+    <line x1="0" y1="190" x2="1000" y2="190" stroke="url(#crimsonLine)" stroke-width="1.5" />
+    <line x1="0" y1="189" x2="1000" y2="189" stroke="#ffffff" stroke-width="0.75" stroke-opacity="0.8" />
+  </g>
+
+  <!-- Outer Tech Border & Corner Brackets -->
+  <rect x="18" y="18" width="964" height="344" fill="none" stroke="#ef233c" stroke-opacity="0.25" stroke-width="1" />
+  
+  <!-- Corner Tech Reticles (Valorant Style) -->
+  <path d="M 18 36 L 18 18 L 36 18" fill="none" stroke="#ef233c" stroke-width="3" />
+  <path d="M 982 36 L 982 18 L 964 18" fill="none" stroke="#ef233c" stroke-width="3" />
+  <path d="M 18 344 L 18 362 L 36 362" fill="none" stroke="#ef233c" stroke-width="3" />
+  <path d="M 982 344 L 982 362 L 964 362" fill="none" stroke="#ef233c" stroke-width="3" />
+
+  <!-- Top Status Pill -->
+  <g transform="translate(48, 32)">
+    <rect x="0" y="0" width="310" height="26" rx="4" fill="#140b0e" stroke="#ef233c" stroke-opacity="0.4" stroke-width="1" />
+    <circle cx="15" cy="13" r="4" fill="#10b981" class="pulse-dot" />
+    <text x="28" y="17" fill="#f4e6e3" font-size="10.5" font-weight="700" letter-spacing="1.5" class="mono">
+      ARBITRUM SEPOLIA · 421614
+    </text>
+  </g>
+
+  <!-- Top Right Mode Indicator -->
+  <g transform="translate(735, 32)">
+    <rect x="0" y="0" width="215" height="26" rx="4" fill="#140b0e" stroke="#ef233c" stroke-opacity="0.3" stroke-width="1" />
+    <text x="14" y="17" fill="#8f7b7f" font-size="10" font-weight="700" letter-spacing="1" class="mono">
+      SYSTEM: <tspan fill="#ef233c">TIME-TOKENIZED</tspan>
+    </text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- MAIN BRAND LOGO: CHROMATIC GLITCH SPLITX (Matching Screenshot Style)   -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <g transform="translate(500, 168)" text-anchor="middle" class="hero-glow">
+    <!-- Cyan Aberration Layer -->
+    <g class="cyan-shift" opacity="0.75">
+      <text x="-2" y="0" font-size="88" letter-spacing="8" fill="none" stroke="#00f0ff" stroke-width="2.5" class="syne">
+        SPLIT<tspan fill="#00f0ff">X</tspan>
+      </text>
+    </g>
+
+    <!-- Yellow / Magenta Aberration Layer -->
+    <g class="red-shift" opacity="0.85">
+      <text x="2" y="1" font-size="88" letter-spacing="8" fill="none" stroke="#ef233c" stroke-width="2.5" class="syne">
+        SPLIT<tspan fill="#ff0055">X</tspan>
+      </text>
+    </g>
+
+    <!-- Main Solid Front Layer -->
+    <text x="0" y="0" font-size="88" letter-spacing="8" fill="#f4e6e3" class="syne">
+      SPLIT<tspan fill="#ef233c">X</tspan>
+    </text>
+  </g>
+
+  <!-- Segmented Tech Grid Underline -->
+  <g transform="translate(260, 196)">
+    <rect x="0" y="0" width="70" height="3" fill="#ef233c" />
+    <rect x="80" y="0" width="320" height="1" fill="#ef233c" fill-opacity="0.3" />
+    <rect x="410" y="0" width="70" height="3" fill="#ef233c" />
+  </g>
+
+  <!-- Primary Headline Quote (Website Exact Match) -->
+  <text x="500" y="242" text-anchor="middle" font-size="18" font-weight="800" fill="#f4e6e3" letter-spacing="4" class="mono">
+    KEEP THE DAYS YOU NEED. <tspan fill="#ef233c">SELL THE REST.</tspan>
+  </text>
+
+  <!-- Terminal Subtitle with Blinking Cursor -->
+  <g transform="translate(500, 278)" text-anchor="middle">
+    <text x="0" y="0" font-size="12" fill="#a89296" letter-spacing="1.5" class="mono">
+      Decentralized Secondary Exchange for Unused Subscription Time
+    </text>
+    <rect x="250" y="-11" width="7" height="13" fill="#ef233c" class="cursor" />
+  </g>
+
+  <!-- Bottom Badges Matrix -->
+  <g transform="translate(180, 318)">
+    <!-- Badge 1: ERC-721 -->
+    <g transform="translate(0, 0)">
+      <rect width="180" height="24" rx="2" fill="#130a0d" stroke="#ef233c" stroke-opacity="0.3" stroke-width="1" />
+      <text x="90" y="16" text-anchor="middle" fill="#f4e6e3" font-size="9.5" font-weight="700" letter-spacing="1" class="mono">
+        TOKENIZED NFT TIME
+      </text>
+    </g>
+
+    <!-- Badge 2: Non-Custodial Escrow -->
+    <g transform="translate(230, 0)">
+      <rect width="180" height="24" rx="2" fill="#130a0d" stroke="#ef233c" stroke-opacity="0.3" stroke-width="1" />
+      <text x="90" y="16" text-anchor="middle" fill="#f4e6e3" font-size="9.5" font-weight="700" letter-spacing="1" class="mono">
+        NON-CUSTODIAL ESCROW
+      </text>
+    </g>
+
+    <!-- Badge 3: Instant ETH Settlement -->
+    <g transform="translate(460, 0)">
+      <rect width="180" height="24" rx="2" fill="#130a0d" stroke="#ef233c" stroke-opacity="0.3" stroke-width="1" />
+      <text x="90" y="16" text-anchor="middle" fill="#f4e6e3" font-size="9.5" font-weight="700" letter-spacing="1" class="mono">
+        INSTANT ETH SETTLEMENT
+      </text>
+    </g>
+  </g>
+</svg>
