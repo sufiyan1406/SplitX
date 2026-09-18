@@ -18,10 +18,10 @@
     "checkJs": true,
     "noEmit": true,
     "types": [
-      "vite/client",
-      "node"
+      "node",
+      "react",
+      "react-dom"
     ],
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"

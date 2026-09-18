@@ -61,8 +61,8 @@ function ServicePage() {
         { label: "Payment", value: "ETH · Arbitrum Sepolia" },
         { label: "Provider", value: `Mock Provider · ${service.provider}` },
       ],
-      run: async () => {
-        const res = ledger.purchasePrimary(service.id, duration);
+      run: async (reportStage) => {
+        const res = await ledger.purchasePrimary(service.id, duration, reportStage);
         return { hash: res.tx.hash, tokenId: res.tokenId };
       },
       onSuccess: (r) => {

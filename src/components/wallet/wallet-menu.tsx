@@ -5,6 +5,8 @@ import { cn, shortAddress } from "@/lib/utils";
 import { ChevronDown, Unplug, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { isLiveMode } from "@/lib/blockchain/contracts";
+
 export function WalletMenu() {
   const w = useWallet();
   const [open, setOpen] = useState(false);
@@ -19,17 +21,18 @@ export function WalletMenu() {
   }, []);
 
   const wrong = w.wrongChain;
+  const live = isLiveMode();
 
   return (
     <div ref={wrap} className="relative flex items-center gap-2">
       <span
         className={cn(
           "meta hidden items-center gap-2 rounded-xs border px-3 py-2 sm:inline-flex",
-          wrong ? "border-danger text-danger" : "border-line text-muted",
+          wrong ? "border-danger text-danger" : live ? "border-ok text-ok" : "border-warn text-warn",
         )}
       >
-        <span className={cn("size-1.5 rounded-full", wrong ? "bg-danger" : "bg-ok")} aria-hidden />
-        {wrong ? "Wrong network" : "Arb Sepolia"}
+        <span className={cn("size-1.5 rounded-full", wrong ? "bg-danger" : live ? "bg-ok" : "bg-warn")} aria-hidden />
+        {wrong ? "Wrong network" : live ? "LIVE · Arbitrum Sepolia" : "DEMO MODE"}
       </span>
 
       <button type="button" className="pill pill-solid gap-2" onClick={() => setOpen((v) => !v)}>

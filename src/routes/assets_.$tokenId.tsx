@@ -52,8 +52,8 @@ function AssetDetail() {
         { label: "Service", value: svc.name },
       ],
       warning: "Your entitlement will be returned to your SplitX wallet.",
-      run: async () => {
-        const res = ledger.cancelListing(current.tokenId);
+      run: async (reportStage) => {
+        const res = await ledger.cancelListing(current.tokenId, reportStage);
         return { hash: res.tx.hash, tokenId: current.tokenId };
       },
     });

@@ -51,8 +51,8 @@ function ListingPage() {
         { label: "You receive", value: `${unitLabel(live.unit, live.duration)} entitlement` },
         { label: "Token", value: `#${live.tokenId}` },
       ],
-      run: async () => {
-        const res = ledger.buyListing(live.tokenId);
+      run: async (reportStage) => {
+        const res = await ledger.buyListing(live.tokenId, reportStage);
         return { hash: res.tx.hash, tokenId: live.tokenId };
       },
       onSuccess: (r) => {

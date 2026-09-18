@@ -1,4 +1,4 @@
-import { humanError } from "@/lib/chain/ledger";
+import { formatBlockchainError } from "@/lib/blockchain/errors";
 import type { TxStatus } from "@/types/splitx";
 import {
   createContext,
@@ -18,12 +18,17 @@ export type TxRunResult = {
   message?: string;
 };
 
+export type TxStageReporter = (
+  nextStatus: TxStatus,
+  resultUpdate?: Partial<TxRunResult>,
+) => void;
+
 export type TxRequest = {
   title: string;
   kindLabel: string;
   fields: TxField[];
   warning?: string;
-  run: () => Promise<TxRunResult>;
+  run: (reportStage?: TxStageReporter) => Promise<TxRunResult>;
   onSuccess?: (result: TxRunResult) => void;
 };
 
@@ -80,30 +85,49 @@ export function TxProvider({ children }: { children: ReactNode }) {
     rejectRef.current = false;
     try {
       setStatus("preparing");
-      await wait(380);
+      await wait(100);
       if (rejectRef.current) return;
+
+      let reportedStage = false;
+      const reportStage: TxStageReporter = (nextStatus, patch) => {
+        if (rejectRef.current) return;
+        reportedStage = true;
+        setStatus(nextStatus);
+        if (patch) {
+          setResult((prev) => ({
+            hash: patch.hash ?? prev?.hash ?? "",
+            tokenId: patch.tokenId ?? prev?.tokenId,
+            message: patch.message ?? prev?.message,
+          }));
+        }
+      };
+
       setStatus("waiting");
-      await wait(720);
+      const res = await request.run(reportStage);
       if (rejectRef.current) return;
-      const res = await request.run();
-      if (rejectRef.current) return;
+
       setResult(res);
-      setStatus("submitted");
-      await wait(520);
-      if (rejectRef.current) return;
-      setStatus("confirming");
-      await wait(780);
-      if (rejectRef.current) return;
-      setStatus("provisioning");
-      await wait(920);
-      if (rejectRef.current) return;
-      setStatus("success");
+
+      if (!reportedStage || status !== "success") {
+        setStatus("submitted");
+        await wait(200);
+        if (rejectRef.current) return;
+        setStatus("confirming");
+        await wait(200);
+        if (rejectRef.current) return;
+        setStatus("provisioning");
+        await wait(200);
+        if (rejectRef.current) return;
+        setStatus("success");
+      }
+
       request.onSuccess?.(res);
     } catch (err) {
+      if (rejectRef.current) return;
       setStatus("failed");
-      setError(humanError(err));
+      setError(formatBlockchainError(err));
     }
-  }, [request]);
+  }, [request, status]);
 
   const value = useMemo(
     () => ({ open, status, request, result, error, start, confirm, reject, close }),

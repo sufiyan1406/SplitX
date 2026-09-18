@@ -68,13 +68,15 @@ function SellFlow() {
         { label: "You receive", value: `${formatEthDisplay(proceeds.seller)} (90%)` },
       ],
       warning: "Once listed, this entitlement is locked and can no longer be used by you.",
-      run: async () => {
+      run: async (reportStage) => {
         let listId = asset.tokenId;
         if (needsSplit) {
-          const split = ledger.splitEntitlement(asset.tokenId, duration);
-          listId = split.minted.tokenId;
+          const split = await ledger.splitEntitlement(asset.tokenId, duration, reportStage);
+          if (split.minted?.tokenId) {
+            listId = split.minted.tokenId;
+          }
         }
-        const res = ledger.approveAndList(listId, listPrice);
+        const res = await ledger.approveAndList(listId, listPrice, reportStage);
         return { hash: res.tx.hash, tokenId: listId };
       },
       onSuccess: (r) => {
