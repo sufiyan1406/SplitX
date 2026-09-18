@@ -92,9 +92,9 @@ graph LR
     end
 
     subgraph Contracts["Arbitrum Sepolia (Chain ID: 421614)"]
-        Marketplace["SplitXMarketplace.sol<br/>(Escrow & Settlement)"]
-        Entitlement["SplitXEntitlement.sol<br/>(ERC-721 Time Slices)"]
-        Adapter["MockProviderAdapter.sol<br/>(Service Oracle)"]
+        Marketplace["SplitXMarketplace.sol<br/>Escrow &amp; Settlement"]
+        Entitlement["SplitXEntitlement.sol<br/>ERC-721 Time Slices"]
+        Adapter["MockProviderAdapter.sol<br/>Service Oracle"]
     end
 
     subgraph Services["Time-Tokenized Catalogs"]
@@ -105,10 +105,10 @@ graph LR
 
     UI --> Ledger
     Ledger --> Wallet
-    Wallet -->|List / Buy (ETH)| Marketplace
-    Wallet -->|Split / Transfer| Entitlement
-    Marketplace -->|Lock / Release| Entitlement
-    Adapter -->|Authorize| Services
+    Wallet -->|"List / Buy [ETH]"| Marketplace
+    Wallet -->|"Split / Transfer"| Entitlement
+    Marketplace -->|"Lock / Release"| Entitlement
+    Adapter -->|"Authorize"| Services
 ```
 
 ---
