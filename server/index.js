@@ -33,7 +33,7 @@ if (fs.existsSync(path.join(abisDir, "MockProviderAdapter.json"))) {
   adapterAbi = JSON.parse(fs.readFileSync(path.join(abisDir, "MockProviderAdapter.json"), "utf8"));
 }
 
-const RPC_URL = process.env.ARBITRUM_SEPOLIA_RPC_URL || "http://127.0.0.1:8545";
+const RPC_URL = process.env.ARBITRUM_SEPOLIA_RPC_URL || "https://sepolia-rollup.arbitrum.io/rpc";
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
 let entitlementContract = null;

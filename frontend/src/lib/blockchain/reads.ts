@@ -377,3 +377,18 @@ export async function fetchAllOwnedEntitlements(ownerAddress: string): Promise<E
 
   return ownedEntitlements;
 }
+
+export async function getOnChainTokenOwner(tokenId: number | bigint): Promise<string | null> {
+  try {
+    const owner = (await publicClient.readContract({
+      address: CONTRACT_ADDRESSES.SplitXEntitlement,
+      abi: entitlementAbi,
+      functionName: "ownerOf",
+      args: [BigInt(tokenId)],
+    })) as string;
+    return owner || null;
+  } catch {
+    return null;
+  }
+}
+

@@ -5,7 +5,20 @@ import marketplaceAbiJson from "../../../../shared/integration/abis/SplitXMarket
 import providerAbiJson from "../../../../shared/integration/abis/MockProviderAdapter.json";
 
 export const entitlementAbi = entitlementAbiJson as Abi;
-export const marketplaceAbi = marketplaceAbiJson as Abi;
+
+// Merge ERC-721 error definitions from the entitlement ABI into the marketplace
+// ABI so viem can decode bubbling revert errors (e.g. ERC721InsufficientApproval)
+// that originate in the entitlement contract but surface through marketplace calls.
+const entitlementErrors = (entitlementAbiJson as any[]).filter(
+  (item: any) => item.type === "error",
+);
+export const marketplaceAbi = [
+  ...(marketplaceAbiJson as any[]),
+  ...entitlementErrors.filter(
+    (e: any) => !(marketplaceAbiJson as any[]).some((m: any) => m.type === "error" && m.name === e.name),
+  ),
+] as Abi;
+
 export const providerAbi = providerAbiJson as Abi;
 
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";

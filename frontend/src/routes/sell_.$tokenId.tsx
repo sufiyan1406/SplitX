@@ -72,7 +72,9 @@ function SellFlow() {
         let listId = asset.tokenId;
         if (needsSplit) {
           const split = await ledger.splitEntitlement(asset.tokenId, duration, reportStage);
-          if (split.minted?.tokenId) {
+          if (split.newTokenId != null) {
+            listId = split.newTokenId;
+          } else if (split.minted?.tokenId) {
             listId = split.minted.tokenId;
           }
         }

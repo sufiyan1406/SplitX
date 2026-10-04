@@ -4,15 +4,27 @@ import { CONTRACT_ADDRESSES, entitlementAbi, marketplaceAbi } from "./contracts"
 import { getOnChainListing, getOnChainServicePrice, toContractServiceId } from "./reads";
 
 /**
- * Fetch current gas price with a 50% buffer to avoid
- * "max fee per gas less than block base fee" rejections on Arbitrum Sepolia.
+ * Fetch current gas fees for Arbitrum Sepolia.
+ * On Arbitrum L2, priority fee is 0n (FCFS sequencer, no miner tips).
  */
 async function getGasOverrides() {
+  try {
+    const fees = await publicClient.estimateFeesPerGas();
+    if (fees.maxFeePerGas) {
+      const buffered = (fees.maxFeePerGas * 130n) / 100n;
+      return {
+        maxFeePerGas: buffered,
+        maxPriorityFeePerGas: 0n,
+      };
+    }
+  } catch {
+    /* fallback to getGasPrice */
+  }
   const gasPrice = await publicClient.getGasPrice();
-  const buffered = (gasPrice * 150n) / 100n;
+  const buffered = (gasPrice * 130n) / 100n;
   return {
     maxFeePerGas: buffered,
-    maxPriorityFeePerGas: buffered / 10n,
+    maxPriorityFeePerGas: 0n,
   };
 }
 
@@ -70,8 +82,26 @@ export async function splitEntitlementOnChain(
   tokenId: number,
   splitDurationDays: number,
 ): Promise<{ hash: `0x${string}`; newTokenId: number }> {
-  const walletClient = getInjectedWalletClient(accountAddress);
+  // 1. Verify token exists and caller is owner
+  try {
+    const owner = (await publicClient.readContract({
+      address: CONTRACT_ADDRESSES.SplitXEntitlement,
+      abi: entitlementAbi,
+      functionName: "ownerOf",
+      args: [BigInt(tokenId)],
+    })) as string;
 
+    if (owner.toLowerCase() !== accountAddress.toLowerCase()) {
+      throw new Error(`You are not the on-chain owner of Token #${tokenId}.`);
+    }
+  } catch (err: any) {
+    if (err?.message?.includes("not the on-chain owner")) throw err;
+    throw new Error(
+      `Token #${tokenId} does not exist on the blockchain. It may be a local demo entitlement that hasn't been purchased on-chain.`,
+    );
+  }
+
+  const walletClient = getInjectedWalletClient(accountAddress);
   const gas = await getGasOverrides();
 
   const hash = await walletClient.writeContract({
@@ -116,17 +146,58 @@ export async function approveMarketplaceOnChain(
   accountAddress: string,
   tokenId: number,
 ): Promise<`0x${string}` | null> {
-  const approvedAddr = (await publicClient.readContract({
-    address: CONTRACT_ADDRESSES.SplitXEntitlement,
-    abi: entitlementAbi,
-    functionName: "getApproved",
-    args: [BigInt(tokenId)],
-  })) as string;
+  // 1. Verify the token exists and caller owns it.
+  try {
+    const owner = (await publicClient.readContract({
+      address: CONTRACT_ADDRESSES.SplitXEntitlement,
+      abi: entitlementAbi,
+      functionName: "ownerOf",
+      args: [BigInt(tokenId)],
+    })) as string;
 
-  if (approvedAddr.toLowerCase() === CONTRACT_ADDRESSES.SplitXMarketplace.toLowerCase()) {
-    return null; // Already approved
+    if (owner.toLowerCase() !== accountAddress.toLowerCase()) {
+      throw new Error(`You are not the on-chain owner of Token #${tokenId}.`);
+    }
+  } catch (err: any) {
+    if (err?.message?.includes("not the on-chain owner")) throw err;
+    throw new Error(
+      `Token #${tokenId} does not exist on the blockchain. It may be a local demo entitlement that hasn't been purchased on-chain.`,
+    );
   }
 
+  // 2. Check if operator approval for all is active.
+  try {
+    const isApprovedAll = (await publicClient.readContract({
+      address: CONTRACT_ADDRESSES.SplitXEntitlement,
+      abi: entitlementAbi,
+      functionName: "isApprovedForAll",
+      args: [accountAddress as `0x${string}`, CONTRACT_ADDRESSES.SplitXMarketplace],
+    })) as boolean;
+
+    if (isApprovedAll) {
+      return null;
+    }
+  } catch {
+    /* continue to per-token approval check */
+  }
+
+  // 3. Check if specific token is already approved.
+  try {
+    const approvedAddr = (await publicClient.readContract({
+      address: CONTRACT_ADDRESSES.SplitXEntitlement,
+      abi: entitlementAbi,
+      functionName: "getApproved",
+      args: [BigInt(tokenId)],
+    })) as string;
+
+    if (approvedAddr.toLowerCase() === CONTRACT_ADDRESSES.SplitXMarketplace.toLowerCase()) {
+      return null; // Already approved
+    }
+  } catch {
+    /* continue to approve */
+  }
+
+  // 4. Send approve transaction.
   const walletClient = getInjectedWalletClient(accountAddress);
   const gas = await getGasOverrides();
   const hash = await walletClient.writeContract({
@@ -139,6 +210,28 @@ export async function approveMarketplaceOnChain(
   });
 
   await publicClient.waitForTransactionReceipt({ hash });
+
+  // 5. Poll briefly to make sure the approval is visible to the RPC node
+  //    before calling listEntitlement (Arbitrum Sepolia public RPCs can
+  //    load-balance across nodes that are a fraction of a second behind).
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  for (let i = 0; i < 6; i++) {
+    try {
+      const approved = (await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.SplitXEntitlement,
+        abi: entitlementAbi,
+        functionName: "getApproved",
+        args: [BigInt(tokenId)],
+      })) as string;
+      if (approved.toLowerCase() === CONTRACT_ADDRESSES.SplitXMarketplace.toLowerCase()) {
+        break;
+      }
+    } catch {
+      // ignore read error
+    }
+    await wait(500);
+  }
+
   return hash;
 }
 
@@ -147,6 +240,52 @@ export async function listEntitlementOnChain(
   tokenId: number,
   priceEth: string,
 ): Promise<`0x${string}`> {
+  // Pre-verification: check ownership
+  try {
+    const owner = (await publicClient.readContract({
+      address: CONTRACT_ADDRESSES.SplitXEntitlement,
+      abi: entitlementAbi,
+      functionName: "ownerOf",
+      args: [BigInt(tokenId)],
+    })) as string;
+    if (owner.toLowerCase() !== accountAddress.toLowerCase()) {
+      throw new Error(`You are not the on-chain owner of Token #${tokenId}.`);
+    }
+  } catch (err: any) {
+    if (err?.message?.includes("not the on-chain owner")) throw err;
+    throw new Error(`Token #${tokenId} does not exist on-chain.`);
+  }
+
+  // Pre-verification: check approval status
+  try {
+    const [approvedAddr, isApprovedAll] = await Promise.all([
+      publicClient.readContract({
+        address: CONTRACT_ADDRESSES.SplitXEntitlement,
+        abi: entitlementAbi,
+        functionName: "getApproved",
+        args: [BigInt(tokenId)],
+      }) as Promise<string>,
+      publicClient.readContract({
+        address: CONTRACT_ADDRESSES.SplitXEntitlement,
+        abi: entitlementAbi,
+        functionName: "isApprovedForAll",
+        args: [accountAddress as `0x${string}`, CONTRACT_ADDRESSES.SplitXMarketplace],
+      }) as Promise<boolean>,
+    ]);
+
+    const isApproved =
+      isApprovedAll || approvedAddr.toLowerCase() === CONTRACT_ADDRESSES.SplitXMarketplace.toLowerCase();
+
+    if (!isApproved) {
+      throw new Error(
+        "Marketplace contract is not approved to transfer this entitlement. Please approve first.",
+      );
+    }
+  } catch (err: any) {
+    if (err?.message?.includes("Marketplace contract is not approved")) throw err;
+    /* other read error, continue to transaction */
+  }
+
   const walletClient = getInjectedWalletClient(accountAddress);
   const priceWei = parseEther(priceEth);
   const gas = await getGasOverrides();

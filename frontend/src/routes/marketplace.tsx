@@ -4,10 +4,10 @@ import { Magnetic, Reveal } from "@/components/motion";
 import { CATEGORIES, getService, SERVICES, unitLabel } from "@/lib/catalog";
 import { useLedger, useLiveSyncStatus } from "@/lib/chain/ledger";
 import { formatEthDisplay } from "@/lib/eth";
-import { useAppMode } from "@/lib/mode-context";
+
 import { cn } from "@/lib/utils";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Globe, ShoppingCart } from "lucide-react";
+
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/marketplace")({ component: MarketplacePage });
@@ -27,7 +27,6 @@ function inBucket(duration: number, unit: string, bucket: DurBucket) {
 
 function MarketplacePage() {
   const snap = useLedger();
-  const { mode, setMode } = useAppMode();
   const { isSyncing, initialPending } = useLiveSyncStatus();
   const [marketType, setMarketType] = useState<MarketType>("all");
   const [cat, setCat] = useState<string>("all");
@@ -87,43 +86,6 @@ function MarketplacePage() {
         </div>
       </Reveal>
 
-      {/* Mode status indicator banner */}
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border border-line/80 bg-surface/40 p-3.5 sm:p-4">
-        <div className="flex items-center gap-2.5">
-          {mode === "buyer" ? (
-            <span className="flex size-7 items-center justify-center bg-hot/15 text-hot">
-              <ShoppingCart className="size-3.5" />
-            </span>
-          ) : (
-            <span className="flex size-7 items-center justify-center bg-hot/15 text-hot">
-              <Globe className="size-3.5" />
-            </span>
-          )}
-          <div>
-            <p className="text-xs font-semibold text-fg">
-              {mode === "buyer"
-                ? "Buyer Mode Active · Ready to purchase"
-                : "Browser Mode Active · Exploring SplitX market"}
-            </p>
-            <p className="text-[11px] text-muted">
-              {mode === "buyer"
-                ? "Connected with buyer balance. Purchases settle immediately on-chain."
-                : "Freely browse subscriptions and secondary listings. Switch to Buyer Mode when ready to buy."}
-            </p>
-          </div>
-        </div>
-
-        {mode !== "buyer" && (
-          <button
-            type="button"
-            className="pill pill-solid py-1 text-xs"
-            onClick={() => setMode("buyer")}
-          >
-            <ShoppingCart className="mr-1.5 size-3 inline" />
-            Switch to Buyer Mode
-          </button>
-        )}
-      </div>
 
       {/* Market Type Selector Tabs */}
       <div className="mt-8 flex flex-wrap items-center gap-2 border-b border-line pb-4">

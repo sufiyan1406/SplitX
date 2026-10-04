@@ -7,10 +7,10 @@ import { getService, unitLabel } from "@/lib/catalog";
 import { ledger, useLedger } from "@/lib/chain/ledger";
 import { CONTRACTS } from "@/lib/contracts/addresses";
 import { formatEthDisplay } from "@/lib/eth";
-import { useAppMode } from "@/lib/mode-context";
+
 import { shortAddress } from "@/lib/utils";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Lock, ShoppingCart, XCircle } from "lucide-react";
+import { ShoppingCart, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/listing/$tokenId")({ component: ListingDetail });
 
@@ -19,7 +19,7 @@ function ListingDetail() {
   const id = Number(tokenId);
   const snap = useLedger();
   const w = useWallet();
-  const mode = useAppMode();
+
   const tx = useTx();
   const nav = useNavigate();
   const listing = snap.listings.find((l) => l.tokenId === id);
@@ -76,7 +76,7 @@ function ListingDetail() {
       ],
       run: async (reportStage) => {
         const res = await ledger.buyListing(live.tokenId, reportStage);
-        return { hash: res.tx.hash, tokenId: live.tokenId };
+        return { hash: res.tx.hash, tokenId: res.tokenId ?? live.tokenId };
       },
       onSuccess: (r) => {
         showServiceTokenToast({
@@ -123,27 +123,11 @@ function ListingDetail() {
           <NeedWallet title="Connect to buy">
             <div className="mt-6 space-y-3">
               {!unavailable && !mine && (
-                mode.mode === "buyer" ? (
-                  <Magnetic>
-                    <button type="button" className="pill pill-solid w-full" onClick={buy}>
-                      Confirm purchase ({formatEthDisplay(live.priceEth)})
-                    </button>
-                  </Magnetic>
-                ) : (
-                  <div className="space-y-1.5">
-                    <button
-                      type="button"
-                      className="pill pill-solid w-full"
-                      onClick={() => mode.setMode("buyer")}
-                    >
-                      <Lock className="mr-1.5 size-3.5 inline" />
-                      Switch to BUYER Mode to Purchase
-                    </button>
-                    <p className="font-mono text-[10px] text-muted text-center">
-                      Mandatory: Switch to BUYER mode to purchase this entitlement with buyer balance
-                    </p>
-                  </div>
-                )
+                <Magnetic>
+                  <button type="button" className="pill pill-solid w-full" onClick={buy}>
+                    Confirm purchase ({formatEthDisplay(live.priceEth)})
+                  </button>
+                </Magnetic>
               )}
 
               {mine && listing.active && (
@@ -153,30 +137,9 @@ function ListingDetail() {
                     <span className="font-mono text-xs text-muted">Seller Account</span>
                   </div>
                   <p className="text-xs text-muted leading-relaxed">
-                    You listed these unused days. To test buying them as a customer on the marketplace,
-                    switch to Buyer Mode.
+                    You listed these unused days on the marketplace.
                   </p>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {mode.mode === "buyer" ? (
-                      <button
-                        type="button"
-                        className="pill pill-solid"
-                        onClick={buy}
-                      >
-                        <ShoppingCart className="mr-1.5 size-3.5 inline" />
-                        Buy This Listing ({formatEthDisplay(live.priceEth)})
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="pill pill-solid"
-                        onClick={() => mode.setMode("buyer")}
-                      >
-                        <ShoppingCart className="mr-1.5 size-3.5 inline" />
-                        Switch to Buyer Mode to Buy
-                      </button>
-                    )}
-
                     <button
                       type="button"
                       className="pill text-danger hover:border-danger hover:text-danger"

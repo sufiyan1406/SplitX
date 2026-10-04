@@ -1,8 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, type ReactNode } from "react";
-import { DEMO_WALLETS } from "@/lib/catalog";
-import { ledger, useLedger } from "@/lib/chain/ledger";
 
 export type AppMode = "browser" | "buyer";
 
@@ -19,7 +17,6 @@ const MODE_STORAGE_KEY = "splitx-active-mode-v3";
 const ModeContext = createContext<ModeContextType | null>(null);
 
 export function ModeProvider({ children }: { children: ReactNode }) {
-  const snap = useLedger();
   const [mode, setModeState] = useState<AppMode>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(MODE_STORAGE_KEY) as AppMode | null;
@@ -32,14 +29,6 @@ export function ModeProvider({ children }: { children: ReactNode }) {
     setModeState(newMode);
     if (typeof window !== "undefined") {
       localStorage.setItem(MODE_STORAGE_KEY, newMode);
-    }
-
-    // When switching to buyer mode, auto-connect the demo account
-    if (newMode === "buyer") {
-      const currentKind = snap.connected?.kind;
-      if (!currentKind || currentKind === "demo" || !snap.connected) {
-        ledger.connectDemo(DEMO_WALLETS[0].address);
-      }
     }
   };
 

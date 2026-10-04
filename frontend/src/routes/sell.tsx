@@ -1,26 +1,22 @@
 import { PageIntro } from "@/components/layout/page-intro";
-import { Magnetic, Reveal } from "@/components/motion";
-import { showServiceTokenToast } from "@/components/toast/service-token-toast";
+import { Reveal } from "@/components/motion";
 import { useTx } from "@/components/tx/tx-context";
 import { NeedWallet } from "@/components/wallet/need-wallet";
 import { useWallet } from "@/hooks/use-wallet";
 import { getService, unitLabel } from "@/lib/catalog";
 import { ledger, useLedger } from "@/lib/chain/ledger";
 import { formatEthDisplay } from "@/lib/eth";
-import { useAppMode } from "@/lib/mode-context";
-import { shortAddress } from "@/lib/utils";
 import type { Listing, Service } from "@/types/splitx";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Globe, Lock, ShoppingCart, XCircle } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/sell")({ component: SellIndex });
 
 function SellIndex() {
   const snap = useLedger();
   const w = useWallet();
-  const { mode, setMode } = useAppMode();
+
   const tx = useTx();
-  const nav = useNavigate();
 
   // Show ONLY the assets which the user has listed themselves
   const myListings = snap.listings.filter(
@@ -46,32 +42,6 @@ function SellIndex() {
     });
   }
 
-  function buy(l: Listing, svc: Service) {
-    tx.start({
-      title: "Confirm purchase",
-      kindLabel: "Marketplace buy",
-      fields: [
-        { label: "Service", value: svc.name },
-        { label: "Duration", value: unitLabel(l.unit, l.duration) },
-        { label: "Price", value: formatEthDisplay(l.priceEth) },
-        { label: "Seller", value: shortAddress(l.seller, 6) },
-        { label: "Token", value: `#${l.tokenId}` },
-      ],
-      run: async (reportStage) => {
-        const res = await ledger.buyListing(l.tokenId, reportStage);
-        return { hash: res.tx.hash, tokenId: l.tokenId };
-      },
-      onSuccess: (r) => {
-        showServiceTokenToast({
-          serviceId: svc.id,
-          duration: l.duration,
-          unit: l.unit,
-          tokenId: r.tokenId ?? l.tokenId,
-        });
-        if (r.tokenId) void nav({ to: "/assets/$tokenId", params: { tokenId: String(r.tokenId) } });
-      },
-    });
-  }
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-12 md:px-8 md:py-16">
@@ -81,43 +51,6 @@ function SellIndex() {
         </PageIntro>
       </Reveal>
 
-      {/* Mode Status Banner */}
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border border-line/80 bg-surface/40 p-3.5 sm:p-4">
-        <div className="flex items-center gap-2.5">
-          {mode === "buyer" ? (
-            <span className="flex size-7 items-center justify-center bg-hot/15 text-hot">
-              <ShoppingCart className="size-3.5" />
-            </span>
-          ) : (
-            <span className="flex size-7 items-center justify-center bg-muted/15 text-muted">
-              <Globe className="size-3.5" />
-            </span>
-          )}
-          <div>
-            <p className="text-xs font-semibold text-fg">
-              {mode === "buyer"
-                ? "Buyer Mode Active · Ready to purchase"
-                : "Browser Mode Active"}
-            </p>
-            <p className="text-[11px] text-muted">
-              {mode === "buyer"
-                ? "You can purchase listed items with your connected balance."
-                : "To buy items from this listings page, switching to BUYER mode is mandatory."}
-            </p>
-          </div>
-        </div>
-
-        {mode !== "buyer" && (
-          <button
-            type="button"
-            className="pill pill-solid py-1 text-xs"
-            onClick={() => setMode("buyer")}
-          >
-            <ShoppingCart className="mr-1.5 size-3 inline" />
-            Switch to Buyer Mode
-          </button>
-        )}
-      </div>
 
       <div className="mt-10">
         <NeedWallet title="Connect to view your listings">
@@ -125,7 +58,7 @@ function SellIndex() {
             <div className="border border-line bg-surface p-8 sm:p-10">
               <div className="flex items-center gap-3">
                 <span className="flex size-10 items-center justify-center bg-line/40 text-muted">
-                  <ShoppingCart className="size-5" />
+                  <XCircle className="size-5" />
                 </span>
                 <div>
                   <h2 className="font-display text-3xl">No Active Listings</h2>
@@ -186,35 +119,6 @@ function SellIndex() {
                         </div>
 
                         <div className="mt-auto space-y-2 pt-6">
-                          {/* Mandatory Buyer Mode check for Buy action */}
-                          {mode === "buyer" ? (
-                            <Magnetic>
-                              <button
-                                type="button"
-                                className="pill pill-solid w-full"
-                                onClick={() => buy(l, svc)}
-                              >
-                                <ShoppingCart className="mr-1.5 size-3.5 inline" />
-                                Buy This Listing ({formatEthDisplay(l.priceEth)})
-                              </button>
-                            </Magnetic>
-                          ) : (
-                            <div className="space-y-1">
-                              <button
-                                type="button"
-                                className="pill pill-solid w-full"
-                                onClick={() => setMode("buyer")}
-                              >
-                                <Lock className="mr-1.5 size-3.5 inline" />
-                                Switch to BUYER Mode to Purchase
-                              </button>
-                              <p className="text-center font-mono text-[10px] text-muted">
-                                Mandatory: Switch to BUYER mode to purchase this listing
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Cancel Listing Button */}
                           <button
                             type="button"
                             className="pill w-full text-danger hover:border-danger hover:text-danger"

@@ -18,6 +18,7 @@ import {
   getOnChainServicePrice,
   getRealEthBalance,
   getOnChainListing,
+  getOnChainTokenOwner,
 } from "@/lib/blockchain/reads";
 import {
   approveMarketplaceOnChain,
@@ -563,32 +564,44 @@ export const ledger = {
     const c = requireConnected();
 
     if (isLiveMode() && c.kind === "injected") {
-      reportStage?.("preparing");
-      reportStage?.("waiting");
+      const onChainOwner = await getOnChainTokenOwner(tokenId);
+      if (onChainOwner && onChainOwner.toLowerCase() === c.address.toLowerCase()) {
+        reportStage?.("preparing");
+        reportStage?.("waiting");
 
-      const { hash, newTokenId } = await splitEntitlementOnChain(c.address, tokenId, duration);
+        const { hash, newTokenId } = await splitEntitlementOnChain(c.address, tokenId, duration);
 
-      reportStage?.("submitted", { hash, tokenId: newTokenId });
-      reportStage?.("confirming", { hash, tokenId: newTokenId });
-      reportStage?.("provisioning", { hash, tokenId: newTokenId });
+        reportStage?.("submitted", { hash, tokenId: newTokenId });
+        reportStage?.("confirming", { hash, tokenId: newTokenId });
+        reportStage?.("provisioning", { hash, tokenId: newTokenId });
 
-      const tx = pushTx({
-        hash,
-        kind: "split",
-        from: c.address,
-        tokenId: newTokenId,
-        label: `Split token #${tokenId} → #${newTokenId} (${duration})`,
-      });
+        const tx = pushTx({
+          hash,
+          kind: "split",
+          from: c.address,
+          tokenId: newTokenId,
+          label: `Split token #${tokenId} → #${newTokenId} (${duration})`,
+        });
 
-      await refreshLiveState(c.address);
-      reportStage?.("success", { hash, tokenId: newTokenId });
+        await refreshLiveState(c.address);
+        reportStage?.("success", { hash, tokenId: newTokenId });
 
-      const current = state.entitlements.find((e) => e.tokenId === tokenId);
-      const minted = state.entitlements.find((e) => e.tokenId === newTokenId);
-      return { original: current, minted, tx };
+        const current = state.entitlements.find((e) => e.tokenId === tokenId);
+        const minted = state.entitlements.find((e) => e.tokenId === newTokenId);
+        return { original: current, minted, tx, newTokenId };
+      }
+      // If token does not exist on-chain or caller isn't on-chain owner, fall through to demo handling for seed/demo entitlements
     }
 
     // DEMO mode fallback
+    reportStage?.("preparing");
+    await new Promise((r) => setTimeout(r, 300));
+    reportStage?.("waiting");
+    await new Promise((r) => setTimeout(r, 400));
+    reportStage?.("submitted");
+    reportStage?.("confirming");
+    await new Promise((r) => setTimeout(r, 300));
+
     const current = liveEntitlements().find((e) => e.tokenId === tokenId);
     if (!current) throw new Error("Entitlement not found.");
     if (current.owner.toLowerCase() !== c.address.toLowerCase()) {
@@ -635,7 +648,8 @@ export const ledger = {
     });
     persist();
     emit();
-    return { original, minted, tx };
+    reportStage?.("success", { hash: tx.hash, tokenId: newId });
+    return { original, minted, tx, newTokenId: newId };
   },
   async approveAndList(tokenId: number, priceEth: string, reportStage?: TxStageReporter) {
     const c = requireConnected();
@@ -643,53 +657,65 @@ export const ledger = {
     if (!Number.isFinite(price) || price <= 0) throw new Error("Enter a valid listing price.");
 
     if (isLiveMode() && c.kind === "injected") {
-      reportStage?.("preparing");
-      reportStage?.("waiting");
+      const onChainOwner = await getOnChainTokenOwner(tokenId);
+      if (onChainOwner && onChainOwner.toLowerCase() === c.address.toLowerCase()) {
+        reportStage?.("preparing");
+        reportStage?.("waiting");
 
-      const approveHash = await approveMarketplaceOnChain(c.address, tokenId);
-      if (approveHash) {
-        pushTx({
-          hash: approveHash,
-          kind: "approve",
+        const approveHash = await approveMarketplaceOnChain(c.address, tokenId);
+        if (approveHash) {
+          pushTx({
+            hash: approveHash,
+            kind: "approve",
+            from: c.address,
+            tokenId,
+            label: `Approve NFT #${tokenId}`,
+          });
+        }
+
+        reportStage?.("submitted");
+        const listHash = await listEntitlementOnChain(c.address, tokenId, priceEth);
+
+        reportStage?.("confirming", { hash: listHash });
+        reportStage?.("provisioning", { hash: listHash });
+
+        const tx = pushTx({
+          hash: listHash,
+          kind: "list",
           from: c.address,
           tokenId,
-          label: `Approve NFT #${tokenId}`,
+          valueEth: priceEth,
+          label: `List token #${tokenId}`,
         });
+
+        await refreshLiveState(c.address);
+        reportStage?.("success", { hash: listHash });
+
+        const listing = state.listings.find((l) => l.tokenId === tokenId) ?? {
+          tokenId,
+          serviceId: "netflix",
+          seller: c.address,
+          priceEth,
+          duration: 10,
+          unit: "days" as const,
+          active: true,
+          listedAt: Date.now(),
+        };
+
+        return { tx, listing };
       }
-
-      reportStage?.("submitted");
-      const listHash = await listEntitlementOnChain(c.address, tokenId, priceEth);
-
-      reportStage?.("confirming", { hash: listHash });
-      reportStage?.("provisioning", { hash: listHash });
-
-      const tx = pushTx({
-        hash: listHash,
-        kind: "list",
-        from: c.address,
-        tokenId,
-        valueEth: priceEth,
-        label: `List token #${tokenId}`,
-      });
-
-      await refreshLiveState(c.address);
-      reportStage?.("success", { hash: listHash });
-
-      const listing = state.listings.find((l) => l.tokenId === tokenId) ?? {
-        tokenId,
-        serviceId: "netflix",
-        seller: c.address,
-        priceEth,
-        duration: 10,
-        unit: "days" as const,
-        active: true,
-        listedAt: Date.now(),
-      };
-
-      return { tx, listing };
+      // If token does not exist on-chain or caller isn't on-chain owner, fall through to demo handling for seed/demo entitlements
     }
 
     // DEMO mode fallback
+    reportStage?.("preparing");
+    await new Promise((r) => setTimeout(r, 300));
+    reportStage?.("waiting");
+    await new Promise((r) => setTimeout(r, 400));
+    reportStage?.("submitted");
+    reportStage?.("confirming");
+    await new Promise((r) => setTimeout(r, 300));
+
     const current = liveEntitlements().find((e) => e.tokenId === tokenId);
     if (!current) throw new Error("Entitlement not found.");
     if (current.owner.toLowerCase() !== c.address.toLowerCase()) {
@@ -745,35 +771,48 @@ export const ledger = {
     });
     persist();
     emit();
+    reportStage?.("success", { hash: tx.hash });
     return { tx, listing };
   },
   async cancelListing(tokenId: number, reportStage?: TxStageReporter) {
     const c = requireConnected();
 
     if (isLiveMode() && c.kind === "injected") {
-      reportStage?.("preparing");
-      reportStage?.("waiting");
+      const onChainListing = await getOnChainListing(tokenId);
+      if (onChainListing && onChainListing.active && onChainListing.seller.toLowerCase() === c.address.toLowerCase()) {
+        reportStage?.("preparing");
+        reportStage?.("waiting");
 
-      const hash = await cancelListingOnChain(c.address, tokenId);
+        const hash = await cancelListingOnChain(c.address, tokenId);
 
-      reportStage?.("submitted", { hash });
-      reportStage?.("confirming", { hash });
-      reportStage?.("provisioning", { hash });
+        reportStage?.("submitted", { hash });
+        reportStage?.("confirming", { hash });
+        reportStage?.("provisioning", { hash });
 
-      const tx = pushTx({
-        hash,
-        kind: "cancel",
-        from: c.address,
-        tokenId,
-        label: `Cancel listing #${tokenId}`,
-      });
+        const tx = pushTx({
+          hash,
+          kind: "cancel",
+          from: c.address,
+          tokenId,
+          label: `Cancel listing #${tokenId}`,
+        });
 
-      await refreshLiveState(c.address);
-      reportStage?.("success", { hash });
-      return { tx };
+        await refreshLiveState(c.address);
+        reportStage?.("success", { hash });
+        return { tx };
+      }
+      // If not active on-chain, fall through to demo handling
     }
 
     // DEMO mode fallback
+    reportStage?.("preparing");
+    await new Promise((r) => setTimeout(r, 300));
+    reportStage?.("waiting");
+    await new Promise((r) => setTimeout(r, 400));
+    reportStage?.("submitted");
+    reportStage?.("confirming");
+    await new Promise((r) => setTimeout(r, 300));
+
     const listing = state.listings.find((l) => l.tokenId === tokenId && l.active);
     if (!listing) throw new Error("This listing is no longer available.");
     if (listing.seller.toLowerCase() !== c.address.toLowerCase()) {
@@ -805,6 +844,7 @@ export const ledger = {
     });
     persist();
     emit();
+    reportStage?.("success", { hash: tx.hash });
     return { tx };
   },
   async buyListing(tokenId: number, reportStage?: TxStageReporter) {
@@ -837,9 +877,58 @@ export const ledger = {
 
         await refreshLiveState(c.address);
         reportStage?.("success", { hash });
-        return { tx, listing: onChainListing };
+        return { tx, listing: onChainListing, tokenId };
       }
-      // If not active on-chain, fall through to demo handling for seed protocol listings
+
+      // If not active on-chain, this is a protocol service item from the marketplace.
+      // Purchase directly on Arbitrum Sepolia via purchaseServiceOnChain
+      // so MetaMask prompts and test ETH is deducted from the wallet!
+      const protocolListing =
+        state.listings.find((l) => l.tokenId === tokenId && l.active) ||
+        seed().listings.find((l) => l.tokenId === tokenId);
+
+      if (protocolListing) {
+        const service = getService(protocolListing.serviceId);
+        if (service) {
+          const durationDays =
+            protocolListing.unit === "credits"
+              ? 10
+              : Math.max(1, protocolListing.duration);
+
+          reportStage?.("waiting");
+          const { hash, tokenId: mintedTokenId } = await purchaseServiceOnChain(
+            c.address,
+            protocolListing.serviceId,
+            durationDays,
+          );
+
+          reportStage?.("submitted", { hash, tokenId: mintedTokenId });
+          reportStage?.("confirming", { hash, tokenId: mintedTokenId });
+          reportStage?.("provisioning", { hash, tokenId: mintedTokenId });
+
+          const tx = pushTx({
+            hash,
+            kind: "purchase",
+            from: c.address,
+            tokenId: mintedTokenId,
+            valueEth: protocolListing.priceEth,
+            label: `Buy ${service.name} · ${protocolListing.duration} ${protocolListing.unit}`,
+          });
+
+          provision({
+            tokenId: mintedTokenId,
+            serviceId: protocolListing.serviceId,
+            owner: c.address,
+            duration: protocolListing.duration,
+            unit: protocolListing.unit,
+            action: "grant",
+          });
+
+          await refreshLiveState(c.address);
+          reportStage?.("success", { hash, tokenId: mintedTokenId });
+          return { tx, listing: protocolListing, tokenId: mintedTokenId };
+        }
+      }
     }
 
     // DEMO mode fallback
